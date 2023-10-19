@@ -1,0 +1,10 @@
+volumes:
+  cs301_mongodb:
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: "cs301_mongodb"
+    ports:
+      - "11111:27017"
+    volumes:
+      - cs301_mongodb:/data/db

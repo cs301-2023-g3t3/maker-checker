@@ -1,9 +1,13 @@
 package main
 
 import (
-    "fmt"
+	"makerchecker/configs"
+	"makerchecker/routes"
 )
 
+func init() {
+    configs.InitEnvironment()
+}
 func main() {
-    fmt.Println("hello world")
+    routes.InitRoutes()
 }
