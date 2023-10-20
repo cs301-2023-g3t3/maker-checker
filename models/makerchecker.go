@@ -18,20 +18,20 @@ type Makerchecker struct {
 }
 
 type Data struct {
-      User          *User        `json:"user,omitempty" bson:"user,omitempty"`
-      Point         *Point       `json:"point,omitempty" bson:"point,omitempty"`
+      User          *User       `json:"user,omitempty" bson:"user,omitempty"`
+      Point         *Point      `json:"point,omitempty" bson:"point,omitempty"`
 }
 
 type User struct {
       Id            string      `json:"id" bson:"id" validate:"required"`
-      Email         string      `json:"email" bson:"email"`
-      FirstName     string      `json:"firstName" bson:"firstName"`
-      LastName      string      `json:"lastName" bson:"lastName"`
-      Role          string      `json:"role" bson:"role"`
+      Email         string      `json:"email,omitempty" bson:"email,omitempty"`
+      FirstName     string      `json:"firstName,omitempty" bson:"firstName,omitempty"`
+      LastName      string      `json:"lastName,omitempty" bson:"lastName,omitempty"`
+      Role          string      `json:"role,omitempty" bson:"role,omitempty"`
 }
 
 type Point struct {
       Id            string      `json:"id" bson:"id" validate:"required"`
-      UserId        string      `json:"userId" bson:"userId"`
-      Balance       float64     `json:"balance" bson:"balance"`
+      UserId        string      `json:"userId,omitempty" bson:"userId,omitempty"`
+      Balance       float64     `json:"balance,omitempty" bson:"balance,omitempty"`
 }
