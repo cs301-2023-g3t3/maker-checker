@@ -6,6 +6,7 @@ import (
 	"log"
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -29,9 +30,28 @@ func DBInstance() *mongo.Client {
         log.Fatal("Fail to connect to DB")
     }
 
-    fmt.Println("Success!")
+    fmt.Printf("Success!")
+
+    fmt.Printf("Creating Indexes")
+
+    InitIndexes(client)
 
     return client
+}
+
+func InitIndexes(client *mongo.Client) {
+    makercheckerCollection := OpenCollection(client, "makerchecker")
+    makercheckerIndexModel := mongo.IndexModel{
+        Keys: bson.D{{Key: "makercheckerId", Value: -1}},
+        Options: options.Index().SetUnique(true),
+    }
+
+    makercheckerIndexCreated, err := makercheckerCollection.Indexes().CreateOne(context.Background(), makercheckerIndexModel)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    fmt.Printf("Created Makerchecker Index %s\n", makercheckerIndexCreated)
 }
 
 func OpenCollection(client *mongo.Client, collectionName string) *mongo.Collection {

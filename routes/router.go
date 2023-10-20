@@ -19,6 +19,8 @@ func InitRoutes() {
 
     makercheckerGroup := v1.Group("/makerchecker")
     makercheckerGroup.GET("", makerchecker.GetAllMakercheckers)
+    makercheckerGroup.GET("/pending/checker/:checkerId", makerchecker.GetPendingWithCheckerId)
+    makercheckerGroup.GET("/pending/maker/:makerId", makerchecker.GetPendingWithMakerId)
     makercheckerGroup.POST("", makerchecker.PostMakerchecker)
 
     router.Run(":"+ PORT)
