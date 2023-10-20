@@ -9,7 +9,7 @@ import (
 )
 
 func InitRoutes() {
-    PORT := os.Getenv("SERVER_PORT")
+    PORT := os.Getenv("PORT")
 
     makerchecker := new(controllers.MakercheckerController)
 
@@ -19,6 +19,7 @@ func InitRoutes() {
 
     makercheckerGroup := v1.Group("/makerchecker")
     makercheckerGroup.GET("", makerchecker.GetAllMakercheckers)
+    makercheckerGroup.POST("", makerchecker.PostMakerchecker)
 
     router.Run(":"+ PORT)
 }
