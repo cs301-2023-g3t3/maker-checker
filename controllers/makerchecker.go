@@ -2,7 +2,10 @@ package controllers
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"makerchecker/configs"
+	"makerchecker/middleware"
 	"makerchecker/models"
 	"net/http"
 	"time"
@@ -10,10 +13,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type MakercheckerController struct{}
+
 
 var collection *mongo.Collection = configs.OpenCollection(configs.Client, "makerchecker")
 var validate = validator.New()
@@ -146,8 +151,8 @@ func (t MakercheckerController) GetPendingWithMakerId(c *gin.Context) {
 }
 
 func (t MakercheckerController) PostMakerchecker (c *gin.Context) {
-    data := new(models.Makerchecker)
-    err := c.BindJSON(data)
+    makerchecker := new(models.Makerchecker)
+    err := c.BindJSON(makerchecker)
     if err != nil {
         c.JSON(http.StatusBadRequest, models.HttpResponse{
             Code: http.StatusBadRequest,
@@ -158,7 +163,7 @@ func (t MakercheckerController) PostMakerchecker (c *gin.Context) {
     }
 
     // Validate the Makerchecker object
-    if err := validate.Struct(data); err != nil {
+    if err := validate.Struct(makerchecker); err != nil {
         c.JSON(http.StatusBadRequest, models.HttpResponse{
             Code: http.StatusBadRequest, 
             Message: "Invalid Makerchecker object.",
@@ -166,13 +171,39 @@ func (t MakercheckerController) PostMakerchecker (c *gin.Context) {
         })
         return
     }
-    
-    // Validate if the body have either User/Point object
-    if data.Data.User == nil && data.Data.Point == nil {
+
+    // Validate if data is empty
+    if len(makerchecker.Data) == 0 {
         c.JSON(http.StatusBadRequest, models.HttpResponse{
-            Code: http.StatusBadRequest,
-            Message: "Invalid Makerchecker object",
-            Data: map[string]interface{}{"data": "Provide User or Point object"},
+            Code: http.StatusBadRequest, 
+            Message: "Invalid Makerchecker object.",
+            Data: map[string]interface{}{"data": "Data cannot be empty"},
+        })
+        return
+    }
+
+    // Validate if data has an ID
+    if _, found := makerchecker.Data["id"]; !found {
+        c.JSON(http.StatusBadRequest, models.HttpResponse{
+            Code: http.StatusBadRequest, 
+            Message: "Invalid Makerchecker object.",
+            Data: map[string]interface{}{"data": "Data ID cannot be empty"},
+        })
+        return
+    }
+    
+    var response models.Response
+
+    // Fetch data from relevant data from microservices
+    dataId := fmt.Sprintf("%v", makerchecker.Data["id"])
+    dbData := middleware.GetPointById(dataId)
+    json.Unmarshal(dbData, &response)
+
+    if response.StatusCode == 404 {
+        c.JSON(http.StatusNotFound, models.HttpResponse{
+            Code: http.StatusNotFound,
+            Message: "Data that you are trying to update does not exist",
+            Data: map[string]interface{}{"data": response.Body},
         })
         return
     }
@@ -181,8 +212,10 @@ func (t MakercheckerController) PostMakerchecker (c *gin.Context) {
     defer cancel()
 
     // add default Status: pending
-    data.Status = "pending"
-    result, err := collection.InsertOne(ctx, data)
+    makerchecker.Status = "pending"
+    makercheckerId := primitive.NewObjectID().Hex()
+    makerchecker.MakercheckerId = makercheckerId
+    result, err := collection.InsertOne(ctx, makerchecker)
 
     if err != nil {
         msg := "Failed to insert makerchecker."
@@ -200,6 +233,6 @@ func (t MakercheckerController) PostMakerchecker (c *gin.Context) {
     c.JSON(http.StatusCreated, models.HttpResponse{
         Code: http.StatusCreated,
         Message: "Success",
-        Data: map[string]interface{}{"data": data, "id": result},
+        Data: map[string]interface{}{"data": makerchecker, "id": result},
     })
 }
