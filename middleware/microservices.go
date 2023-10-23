@@ -4,9 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"log"
-	"net/http"
+	"makerchecker/models"
 	"os"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -14,29 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/lambda"
 )
 
-var apiGateway = os.Getenv("APIGATEWAY")
-var region = os.Getenv("REGION")
-var stage = os.Getenv("STAGE")
-var uri = fmt.Sprintf("https://%s.execute-api.%s.amazonaws.com/%s/api/v1/", apiGateway, region, stage)
-
-func GetAllPoints() {
-    routeName := fmt.Sprintf("%s/%s", uri, "points")
-
-    res, err := http.Get(routeName)
-    if err != nil {
-        fmt.Print(err.Error())
-        return
-    }
-
-    data, err := ioutil.ReadAll(res.Body)
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    fmt.Println(string(data))
-}
-
-func GetFromMicroserviceById(lambdaFn string, apiRoute string, id string) []byte {
+func GetFromMicroserviceById(lambdaFn string, apiRoute string, id string) (int, map[string]interface{}) {
     cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(os.Getenv("REGION")))
     if err != nil {
         panic(err)
@@ -63,5 +39,12 @@ func GetFromMicroserviceById(lambdaFn string, apiRoute string, id string) []byte
         panic(err)
     }
 
-    return res.Payload
+    var response models.Response
+    
+    json.Unmarshal(res.Payload, &response)
+
+    var responseBody map[string]interface{}
+    json.Unmarshal([]byte(response.Body), responseBody)
+
+    return response.StatusCode, responseBody
 }

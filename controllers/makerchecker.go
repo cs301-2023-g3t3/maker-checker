@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"makerchecker/configs"
 	"makerchecker/middleware"
@@ -205,45 +204,37 @@ func (t MakercheckerController) PostMakerchecker (c *gin.Context) {
         return
     }
     
-    // TODO: move this chunk ---> to middleware service
-    var response models.Response
+    // for actions that needs existing data such as UPDATE and DELETE
+    if makerchecker.Action == "UPDATE" || makerchecker.Action == "DELETE" {
+        dataId := fmt.Sprint(makerchecker.Data["id"])
+        statusCode, responseBody := middleware.GetFromMicroserviceById(lambdaFn, apiRoute, dataId) // Fetch data from relevant data from microservices
 
-    dataId := fmt.Sprint(makerchecker.Data["id"])
-    dbData := middleware.GetFromMicroserviceById(lambdaFn, apiRoute, dataId) // Fetch data from relevant data from microservices
-    json.Unmarshal([]byte(dbData), &response)
+        // Either Route/Page or DataId is not found in the relevant database
+        if statusCode == 404 {
+            c.JSON(http.StatusNotFound, models.HttpResponse{
+                Code: http.StatusNotFound,
+                Message: "Data is not found.",
+                Data: map[string]interface{}{"data": responseBody["message"]},
+            })
+            return
+        }
+        
+        // Something bad happened while retrieving from microservices
+        if statusCode == 500 {
+            c.JSON(http.StatusInternalServerError, models.HttpResponse{
+                Code: http.StatusInternalServerError,
+                Message: "Failed to retrieve data from database",
+                Data: map[string]interface{}{"data": responseBody["message"]},
+            })
+            return
+        }
 
-    var responseBody map[string]interface{}     // for mapping response body properly
-    json.Unmarshal([]byte(response.Body), &responseBody)
-
-    // Either Route/Page or DataId is not found in the relevant database
-    if response.StatusCode == 404 {
-        c.JSON(http.StatusNotFound, models.HttpResponse{
-            Code: http.StatusNotFound,
-            Message: "Data is not found.",
-            Data: map[string]interface{}{"data": responseBody["message"]},
-        })
-        return
+        utils.GetDifferences(responseBody, makerchecker.Data)
     }
-    
-    // Something bad happened while retrieving from microservices
-    if response.StatusCode == 500 {
-        c.JSON(http.StatusInternalServerError, models.HttpResponse{
-            Code: http.StatusInternalServerError,
-            Message: "Failed to retrieve data from database",
-            Data: map[string]interface{}{"data": responseBody["message"]},
-        })
-        return
-    }
-    // <--
 
     ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
     defer cancel()
 
-    // TODO: compare differences
-
-    if makerchecker.Action == "UPDATE" {
-        utils.GetDifferences(responseBody, makerchecker.Data)
-    }
     makerchecker.Status = "pending" // add default Status: pending
     makerchecker.MakercheckerId = primitive.NewObjectID().Hex() // add makercheckerId ObjectKey
     result, err := collection.InsertOne(ctx, makerchecker)
