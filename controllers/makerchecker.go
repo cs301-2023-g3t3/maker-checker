@@ -7,6 +7,7 @@ import (
 	"makerchecker/configs"
 	"makerchecker/middleware"
 	"makerchecker/models"
+	"makerchecker/utils"
 	"net/http"
 	"time"
 
@@ -191,18 +192,41 @@ func (t MakercheckerController) PostMakerchecker (c *gin.Context) {
         })
         return
     }
+
+    // Get relevant Lambda Function and API Routes
+    lambdaFn, apiRoute := utils.ProcessMicroserviceTypes(*makerchecker)
+    
+    if lambdaFn == "Error" {
+        c.JSON(http.StatusBadRequest, models.HttpResponse{
+            Code: http.StatusBadRequest, 
+            Message: "Invalid Makerchecker object.",
+            Data: map[string]interface{}{"data": "Database field must be of 'users' or 'points'."},
+        })
+        return
+    }
     
     var response models.Response
 
     // Fetch data from relevant data from microservices
     dataId := fmt.Sprintf("%v", makerchecker.Data["id"])
-    dbData := middleware.GetPointById(dataId)
+    dbData := middleware.GetFromMicroserviceById(lambdaFn, apiRoute, dataId)
     json.Unmarshal(dbData, &response)
 
+    // Given DataId is not found in the relevant database
     if response.StatusCode == 404 {
         c.JSON(http.StatusNotFound, models.HttpResponse{
             Code: http.StatusNotFound,
-            Message: "Data that you are trying to update does not exist",
+            Message: "Data is not found.",
+            Data: map[string]interface{}{"data": response.Body},
+        })
+        return
+    }
+    
+    // Something bad happened while retrieving from microservices
+    if response.StatusCode == 500 {
+        c.JSON(http.StatusInternalServerError, models.HttpResponse{
+            Code: http.StatusInternalServerError,
+            Message: "Failed to retrieve data from database",
             Data: map[string]interface{}{"data": response.Body},
         })
         return

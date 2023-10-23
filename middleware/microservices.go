@@ -36,7 +36,7 @@ func GetAllPoints() {
     fmt.Println(string(data))
 }
 
-func GetPointById(id string) []byte {
+func GetFromMicroserviceById(lambdaFn string, apiRoute string, id string) []byte {
     cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(os.Getenv("REGION")))
     if err != nil {
         panic(err)
@@ -46,7 +46,7 @@ func GetPointById(id string) []byte {
 
     event := map[string]interface{}{
         "httpMethod": "GET",
-        "path": fmt.Sprintf("/api/v1/points/%v", id),
+        "path": fmt.Sprintf("/api/v1/%v/%v", apiRoute, id),
     }
 
     eventJSON, err := json.Marshal(event)
@@ -55,7 +55,38 @@ func GetPointById(id string) []byte {
     }
     
     res, err := client.Invoke(context.TODO(), &lambda.InvokeInput{
-        FunctionName: aws.String("points-ledger-api"),
+        FunctionName: aws.String(lambdaFn),
+        Payload: eventJSON,
+    })
+
+    if err != nil {
+        panic(err)
+    }
+    fmt.Println(string(res.Payload))
+
+    return res.Payload
+}
+
+func GetUsers() []byte {
+    cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(os.Getenv("REGION")))
+    if err != nil {
+        panic(err)
+    }
+
+    client := lambda.NewFromConfig(cfg)
+
+    event := map[string]interface{}{
+        "httpMethod": "GET",
+        "path": fmt.Sprintf("api/v1/users"),
+    }
+
+    eventJSON, err := json.Marshal(event)
+    if err != nil {
+        panic(err)
+    }
+    
+    res, err := client.Invoke(context.TODO(), &lambda.InvokeInput{
+        FunctionName: aws.String("user-storage-api"),
         Payload: eventJSON,
     })
 
