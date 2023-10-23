@@ -1,3 +1,4 @@
+version: "3.8"
 volumes:
   cs301_mongodb:
 services:
@@ -5,6 +6,17 @@ services:
     image: mongo:latest
     container_name: "cs301_mongodb"
     ports:
-      - "11111:27017"
+      - "27017:27017"
     volumes:
       - cs301_mongodb:/data/db
+  cs301-api:
+    container_name: cs301-api
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file: .env
+    ports:
+      - "11112:11112"
+    volumes:
+      - ./:/app
+      - ~/.aws/credentials:/root/.aws/credentials
