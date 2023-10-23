@@ -205,19 +205,22 @@ func (t MakercheckerController) PostMakerchecker (c *gin.Context) {
         return
     }
     
+    // TODO: move this chunk ---> to middleware service
     var response models.Response
 
-    // Fetch data from relevant data from microservices
-    dataId := fmt.Sprintf("%v", makerchecker.Data["id"])
-    dbData := middleware.GetFromMicroserviceById(lambdaFn, apiRoute, dataId)
-    json.Unmarshal(dbData, &response)
+    dataId := fmt.Sprint(makerchecker.Data["id"])
+    dbData := middleware.GetFromMicroserviceById(lambdaFn, apiRoute, dataId) // Fetch data from relevant data from microservices
+    json.Unmarshal([]byte(dbData), &response)
 
-    // Given DataId is not found in the relevant database
+    var responseBody map[string]interface{}     // for mapping response body properly
+    json.Unmarshal([]byte(response.Body), &responseBody)
+
+    // Either Route/Page or DataId is not found in the relevant database
     if response.StatusCode == 404 {
         c.JSON(http.StatusNotFound, models.HttpResponse{
             Code: http.StatusNotFound,
             Message: "Data is not found.",
-            Data: map[string]interface{}{"data": response.Body},
+            Data: map[string]interface{}{"data": responseBody["message"]},
         })
         return
     }
@@ -227,18 +230,22 @@ func (t MakercheckerController) PostMakerchecker (c *gin.Context) {
         c.JSON(http.StatusInternalServerError, models.HttpResponse{
             Code: http.StatusInternalServerError,
             Message: "Failed to retrieve data from database",
-            Data: map[string]interface{}{"data": response.Body},
+            Data: map[string]interface{}{"data": responseBody["message"]},
         })
         return
     }
+    // <--
 
     ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
     defer cancel()
 
-    // add default Status: pending
-    makerchecker.Status = "pending"
-    makercheckerId := primitive.NewObjectID().Hex()
-    makerchecker.MakercheckerId = makercheckerId
+    // TODO: compare differences
+
+    if makerchecker.Action == "UPDATE" {
+        utils.GetDifferences(responseBody, makerchecker.Data)
+    }
+    makerchecker.Status = "pending" // add default Status: pending
+    makerchecker.MakercheckerId = primitive.NewObjectID().Hex() // add makercheckerId ObjectKey
     result, err := collection.InsertOne(ctx, makerchecker)
 
     if err != nil {

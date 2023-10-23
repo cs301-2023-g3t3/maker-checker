@@ -62,38 +62,6 @@ func GetFromMicroserviceById(lambdaFn string, apiRoute string, id string) []byte
     if err != nil {
         panic(err)
     }
-    fmt.Println(string(res.Payload))
-
-    return res.Payload
-}
-
-func GetUsers() []byte {
-    cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(os.Getenv("REGION")))
-    if err != nil {
-        panic(err)
-    }
-
-    client := lambda.NewFromConfig(cfg)
-
-    event := map[string]interface{}{
-        "httpMethod": "GET",
-        "path": fmt.Sprintf("api/v1/users"),
-    }
-
-    eventJSON, err := json.Marshal(event)
-    if err != nil {
-        panic(err)
-    }
-    
-    res, err := client.Invoke(context.TODO(), &lambda.InvokeInput{
-        FunctionName: aws.String("user-storage-api"),
-        Payload: eventJSON,
-    })
-
-    if err != nil {
-        panic(err)
-    }
-    fmt.Println(string(res.Payload))
 
     return res.Payload
 }

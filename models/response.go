@@ -1,8 +1,8 @@
 package models
 
 type Response struct {
-    Body                string                  `json:"body"`
-    Headers             map[string]interface{}  `json:"headers"`
-    MultiValueHeaders   map[string]interface{}  `json:"multiValueHeaders"`
-    StatusCode          int                     `json:"statusCode"`
+    StatusCode        int                    `json:"statusCode"`
+    Headers           map[string]string      `json:"headers"`
+    MultiValueHeaders map[string]interface{}    `json:"multiValueHeaders"`
+    Body              string                 `json:"body"`
 }
