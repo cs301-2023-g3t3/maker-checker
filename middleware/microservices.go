@@ -44,7 +44,7 @@ func GetFromMicroserviceById(lambdaFn string, apiRoute string, id string) (int, 
     json.Unmarshal(res.Payload, &response)
 
     var responseBody map[string]interface{}
-    json.Unmarshal([]byte(response.Body), responseBody)
+    json.Unmarshal([]byte(response.Body), &responseBody)
 
     return response.StatusCode, responseBody
 }

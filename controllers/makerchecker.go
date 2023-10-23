@@ -183,7 +183,7 @@ func (t MakercheckerController) PostMakerchecker (c *gin.Context) {
     }
 
     // Validate if data has an ID
-    if _, found := makerchecker.Data["id"]; !found {
+    if _, found := makerchecker.Data["Id"]; !found {
         c.JSON(http.StatusBadRequest, models.HttpResponse{
             Code: http.StatusBadRequest, 
             Message: "Invalid Makerchecker object.",
@@ -206,24 +206,13 @@ func (t MakercheckerController) PostMakerchecker (c *gin.Context) {
     
     // for actions that needs existing data such as UPDATE and DELETE
     if makerchecker.Action == "UPDATE" || makerchecker.Action == "DELETE" {
-        dataId := fmt.Sprint(makerchecker.Data["id"])
+        dataId := fmt.Sprint(makerchecker.Data["Id"])
         statusCode, responseBody := middleware.GetFromMicroserviceById(lambdaFn, apiRoute, dataId) // Fetch data from relevant data from microservices
 
-        // Either Route/Page or DataId is not found in the relevant database
-        if statusCode == 404 {
-            c.JSON(http.StatusNotFound, models.HttpResponse{
-                Code: http.StatusNotFound,
-                Message: "Data is not found.",
-                Data: map[string]interface{}{"data": responseBody["message"]},
-            })
-            return
-        }
-        
-        // Something bad happened while retrieving from microservices
-        if statusCode == 500 {
-            c.JSON(http.StatusInternalServerError, models.HttpResponse{
-                Code: http.StatusInternalServerError,
-                Message: "Failed to retrieve data from database",
+        if statusCode != 200 {
+            c.JSON(statusCode, models.HttpResponse{
+                Code: statusCode,
+                Message: "Error",
                 Data: map[string]interface{}{"data": responseBody["message"]},
             })
             return

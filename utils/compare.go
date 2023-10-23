@@ -1,11 +1,17 @@
 package utils
 
 import (
-    "fmt"
+	"fmt"
+    // "strings"
 )
 
-func GetDifferences(action string, oldData map[string]interface{}, updatedData map[string]interface{}) string {
-    fmt.Println(action)
+func GetDifferences(oldData map[string]interface{}, updatedData map[string]interface{}) string {
+    // for k, v := range oldData {
+    //     if k != "id" {
+    //         oldData[strings.ToLower(k)] = v
+    //     }
+    //     delete(oldData, k)
+    // }
     fmt.Println(oldData)
     fmt.Println(updatedData)
 
