@@ -38,7 +38,7 @@ func (t MakercheckerController) GetAllMakercheckers(c *gin.Context) {
     err = cursor.All(ctx, &makercheckers)
     if err != nil {
         c.JSON(
-            http.StatusInternalServerError, models.HttpResponse{
+            http.StatusInternalServerError, models.HttpError{
                 Code: http.StatusInternalServerError, 
                 Message: "Failed to retrieve makerchecker requests",
                 Data: map[string]interface{}{"data": err.Error()},
@@ -46,18 +46,13 @@ func (t MakercheckerController) GetAllMakercheckers(c *gin.Context) {
         return
     }
 
-    c.JSON(
-        http.StatusOK, models.HttpResponse{
-            Code: http.StatusOK, 
-            Message: "Success",
-            Data: map[string]interface{}{"data": makercheckers},
-    })
+    c.JSON(http.StatusOK, makercheckers)
 }
 
 func (t MakercheckerController) GetPendingWithCheckerId(c *gin.Context) {
     checkerId := c.Param("checkerId");
     if checkerId == "" {
-        c.JSON(http.StatusBadRequest, models.HttpResponse{
+        c.JSON(http.StatusBadRequest, models.HttpError{
             Code: http.StatusBadRequest, 
             Message: "Error",
             Data: map[string]interface{}{"data": "CheckerId parameter cannot be empty"},
@@ -78,7 +73,7 @@ func (t MakercheckerController) GetPendingWithCheckerId(c *gin.Context) {
     var makercheckers [] models.Makerchecker
     err = cursor.All(ctx, &makercheckers)
     if err != nil {
-        c.JSON(http.StatusInternalServerError, models.HttpResponse{
+        c.JSON(http.StatusInternalServerError, models.HttpError{
             Code: http.StatusInternalServerError,
             Message: "Failed to retrieve makerchecker requests.",
             Data: map[string]interface{}{"data": err.Error()},
@@ -87,7 +82,7 @@ func (t MakercheckerController) GetPendingWithCheckerId(c *gin.Context) {
     }
 
     if len(makercheckers) == 0 {
-        c.JSON(http.StatusNotFound, models.HttpResponse{
+        c.JSON(http.StatusNotFound, models.HttpError{
             Code: http.StatusNotFound,
             Message: "Not found",
             Data: map[string]interface{}{"data": "CheckerID: " + checkerId + " not found."},
@@ -95,17 +90,13 @@ func (t MakercheckerController) GetPendingWithCheckerId(c *gin.Context) {
         return
     }
     
-    c.JSON(http.StatusOK, models.HttpResponse{
-        Code: http.StatusOK,
-        Message: "Success",
-        Data: map[string]interface{}{"data": makercheckers},
-    })
+    c.JSON(http.StatusOK, makercheckers)
 }
 
 func (t MakercheckerController) GetPendingWithMakerId(c *gin.Context) {
     makerId := c.Param("makerId");
     if makerId == "" {
-        c.JSON(http.StatusBadRequest, models.HttpResponse{
+        c.JSON(http.StatusBadRequest, models.HttpError{
             Code: http.StatusBadRequest, 
             Message: "Error",
             Data: map[string]interface{}{"data": "MakerId parameter cannot be empty"},
@@ -126,7 +117,7 @@ func (t MakercheckerController) GetPendingWithMakerId(c *gin.Context) {
     var makercheckers [] models.Makerchecker
     err = cursor.All(ctx, &makercheckers)
     if err != nil {
-        c.JSON(http.StatusInternalServerError, models.HttpResponse{
+        c.JSON(http.StatusInternalServerError, models.HttpError{
             Code: http.StatusInternalServerError,
             Message: "Failed to retrieve makerchecker requests.",
             Data: map[string]interface{}{"data": err.Error()},
@@ -135,7 +126,7 @@ func (t MakercheckerController) GetPendingWithMakerId(c *gin.Context) {
     }
 
     if len(makercheckers) == 0 {
-        c.JSON(http.StatusNotFound, models.HttpResponse{
+        c.JSON(http.StatusNotFound, models.HttpError{
             Code: http.StatusNotFound,
             Message: "Not found",
             Data: map[string]interface{}{"data": "MakerID: " + makerId + " not found."},
@@ -143,18 +134,14 @@ func (t MakercheckerController) GetPendingWithMakerId(c *gin.Context) {
         return
     }
 
-    c.JSON(http.StatusOK, models.HttpResponse{
-        Code: http.StatusOK,
-        Message: "Success",
-        Data: map[string]interface{}{"data": makercheckers},
-    })
+    c.JSON(http.StatusOK, makercheckers)
 }
 
 func (t MakercheckerController) PostMakerchecker (c *gin.Context) {
     makerchecker := new(models.Makerchecker)
     err := c.BindJSON(makerchecker)
     if err != nil {
-        c.JSON(http.StatusBadRequest, models.HttpResponse{
+        c.JSON(http.StatusBadRequest, models.HttpError{
             Code: http.StatusBadRequest,
             Message: "Invalid Makerchecker object.",
             Data: map[string]interface{}{"data": err.Error()},
@@ -164,7 +151,7 @@ func (t MakercheckerController) PostMakerchecker (c *gin.Context) {
 
     // Validate the Makerchecker object
     if err := validate.Struct(makerchecker); err != nil {
-        c.JSON(http.StatusBadRequest, models.HttpResponse{
+        c.JSON(http.StatusBadRequest, models.HttpError{
             Code: http.StatusBadRequest, 
             Message: "Invalid Makerchecker object.",
             Data: map[string]interface{}{"data": err.Error()},
@@ -174,7 +161,7 @@ func (t MakercheckerController) PostMakerchecker (c *gin.Context) {
 
     // Validate if data is empty
     if len(makerchecker.Data) == 0 {
-        c.JSON(http.StatusBadRequest, models.HttpResponse{
+        c.JSON(http.StatusBadRequest, models.HttpError{
             Code: http.StatusBadRequest, 
             Message: "Invalid Makerchecker object.",
             Data: map[string]interface{}{"data": "Data cannot be empty"},
@@ -184,7 +171,7 @@ func (t MakercheckerController) PostMakerchecker (c *gin.Context) {
 
     // Validate if data has an ID
     if _, found := makerchecker.Data["id"]; !found {
-        c.JSON(http.StatusBadRequest, models.HttpResponse{
+        c.JSON(http.StatusBadRequest, models.HttpError{
             Code: http.StatusBadRequest, 
             Message: "Invalid Makerchecker object.",
             Data: map[string]interface{}{"data": "Data ID cannot be empty"},
@@ -196,7 +183,7 @@ func (t MakercheckerController) PostMakerchecker (c *gin.Context) {
     lambdaFn, apiRoute := utils.ProcessMicroserviceTypes(*makerchecker)
     
     if lambdaFn == "Error" {
-        c.JSON(http.StatusBadRequest, models.HttpResponse{
+        c.JSON(http.StatusBadRequest, models.HttpError{
             Code: http.StatusBadRequest, 
             Message: "Invalid Makerchecker object.",
             Data: map[string]interface{}{"data": "Database field must be of 'users' or 'points'."},
@@ -212,7 +199,7 @@ func (t MakercheckerController) PostMakerchecker (c *gin.Context) {
         statusCode, responseBody := middleware.GetFromMicroserviceById(lambdaFn, apiRoute, dataId) // Fetch data from relevant data from microservices
 
         if statusCode != 200 {
-            c.JSON(statusCode, models.HttpResponse{
+            c.JSON(statusCode, models.HttpError{
                 Code: statusCode,
                 Message: "Error",
                 Data: map[string]interface{}{"data": responseBody["message"]},
@@ -220,7 +207,17 @@ func (t MakercheckerController) PostMakerchecker (c *gin.Context) {
             return
         }
 
-        data = utils.GetDifferences(responseBody, makerchecker.Data)
+        statusCode, data = utils.GetDifferences(responseBody, makerchecker.Data)
+
+        if statusCode != 200 {
+            c.JSON(statusCode, models.HttpError{
+                Code: statusCode,
+                Message: "Error",
+                Data: data,
+            })
+            return
+        }
+
         makerchecker.Data = data
     }
 
@@ -236,7 +233,7 @@ func (t MakercheckerController) PostMakerchecker (c *gin.Context) {
         if mongo.IsDuplicateKeyError(err) {
             msg = "MakercheckId already exists."
         }
-        c.JSON(http.StatusBadRequest, models.HttpResponse{
+        c.JSON(http.StatusBadRequest, models.HttpError{
             Code: http.StatusBadRequest,
             Message: msg,
             Data: map[string]interface{}{"data": err.Error()},
@@ -244,9 +241,5 @@ func (t MakercheckerController) PostMakerchecker (c *gin.Context) {
         return
     }
 
-    c.JSON(http.StatusCreated, models.HttpResponse{
-        Code: http.StatusCreated,
-        Message: "Success",
-        Data: map[string]interface{}{"data": makerchecker, "id": result},
-    })
+    c.JSON(http.StatusCreated, map[string]interface{}{"result": makerchecker, "insertedId": result.InsertedID})
 }
