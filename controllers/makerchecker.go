@@ -183,7 +183,7 @@ func (t MakercheckerController) PostMakerchecker (c *gin.Context) {
     }
 
     // Validate if data has an ID
-    if _, found := makerchecker.Data["Id"]; !found {
+    if _, found := makerchecker.Data["id"]; !found {
         c.JSON(http.StatusBadRequest, models.HttpResponse{
             Code: http.StatusBadRequest, 
             Message: "Invalid Makerchecker object.",
@@ -203,10 +203,12 @@ func (t MakercheckerController) PostMakerchecker (c *gin.Context) {
         })
         return
     }
+
+    var data map[string]interface{}
     
-    // for actions that needs existing data such as UPDATE and DELETE
-    if makerchecker.Action == "UPDATE" || makerchecker.Action == "DELETE" {
-        dataId := fmt.Sprint(makerchecker.Data["Id"])
+    // for actions that needs existing data such as UPDATE
+    if makerchecker.Action == "UPDATE" {
+        dataId := fmt.Sprint(makerchecker.Data["id"])
         statusCode, responseBody := middleware.GetFromMicroserviceById(lambdaFn, apiRoute, dataId) // Fetch data from relevant data from microservices
 
         if statusCode != 200 {
@@ -218,7 +220,8 @@ func (t MakercheckerController) PostMakerchecker (c *gin.Context) {
             return
         }
 
-        utils.GetDifferences(responseBody, makerchecker.Data)
+        data = utils.GetDifferences(responseBody, makerchecker.Data)
+        makerchecker.Data = data
     }
 
     ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
