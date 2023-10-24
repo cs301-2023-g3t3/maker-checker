@@ -1,6 +1,6 @@
 package utils
 
-import "makerchecker/models"
+import "makerchecker-api/models"
 
 func ProcessMicroserviceTypes(makerchecker models.Makerchecker) (string, string) {
     switch str := makerchecker.Database; str {

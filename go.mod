@@ -1,4 +1,4 @@
-module makerchecker
+module makerchecker-api
 
 go 1.19
 

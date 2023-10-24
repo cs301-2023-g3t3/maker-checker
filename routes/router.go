@@ -3,7 +3,7 @@ package routes
 
 import (
 	"os"
-	"makerchecker/controllers"
+	"makerchecker-api/controllers/makerchecker"
 
 	"github.com/gin-gonic/gin"
 )

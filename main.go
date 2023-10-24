@@ -1,7 +1,7 @@
 package main
 
 import (
-	"makerchecker/routes"
+	"makerchecker-api/routes"
 )
 
 func main() {

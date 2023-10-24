@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"makerchecker/models"
+	"makerchecker-api/models"
 	"os"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
