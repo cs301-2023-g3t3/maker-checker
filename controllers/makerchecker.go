@@ -199,6 +199,15 @@ func (t MakercheckerController) PostMakerchecker (c *gin.Context) {
         statusCode, responseBody := middleware.GetFromMicroserviceById(lambdaFn, apiRoute, dataId) // Fetch data from relevant data from microservices
 
         if statusCode != 200 {
+            if statusCode == 0 {
+                c.JSON(statusCode, models.HttpError{
+                    Code: 500,
+                    Message: "Internal Server Error",
+                    Data: map[string]interface{}{"data": "Error retrieving data from the microservices. Database is not functioning."},
+                })
+                return
+            }
+
             c.JSON(statusCode, models.HttpError{
                 Code: statusCode,
                 Message: "Error",
