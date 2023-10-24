@@ -48,8 +48,6 @@ func (t MakercheckerController) CreateMakerchecker (c *gin.Context) {
         return
     }
 
-    var data map[string]interface{}
-    
     switch makerchecker.Action {
     case "UPDATE" :
         if _, found := makerchecker.Data["id"]; !found {
@@ -67,34 +65,19 @@ func (t MakercheckerController) CreateMakerchecker (c *gin.Context) {
 
         // Error fetching data
         if statusCode != 200 {
+            msg := responseBody["message"]
             if statusCode == 0 {
-                c.JSON(statusCode, models.HttpError{
-                    Code: 500,
-                    Message: "Internal Server Error",
-                    Data: map[string]interface{}{"data": "Error retrieving data from the microservices. Database is not functioning."},
-                })
-                return
+                statusCode = 500
+                msg = "Error retrieving data from the microservices."
             }
 
             c.JSON(statusCode, models.HttpError{
                 Code: statusCode,
                 Message: "Error",
-                Data: map[string]interface{}{"data": responseBody["message"]},
+                Data: map[string]interface{}{"data": msg},
             })
             return
         }
-
-        statusCode, data = utils.GetDifferences(responseBody, makerchecker.Data)
-
-        if statusCode != 200 {
-            c.JSON(statusCode, models.HttpError{
-                Code: statusCode,
-                Message: "Error",
-                Data: data,
-            })
-            return
-        }
-        makerchecker.Data = data
         break
     case "CREATE":
         if makerchecker.Database != "users" {

@@ -2,7 +2,6 @@ package makerchecker
 
 import (
 	"context"
-	"fmt"
 	"makerchecker-api/middleware"
 	"makerchecker-api/models"
 	"makerchecker-api/utils"
@@ -46,27 +45,53 @@ func (t MakercheckerController) UpdateMakerchecker (c *gin.Context) {
         return
     }
 
+    if makerchecker.Status == "cancelled" || makerchecker.Status == "approved"{
+        c.JSON(http.StatusBadRequest, models.HttpError{
+            Code: http.StatusBadRequest,
+            Message: "Bad Request",
+            Data: map[string]interface{}{"data": "Request cannot be executed"},
+        })
+        return
+    }
+
     lambdaFn, apiRoute := utils.ProcessMicroserviceTypes(makerchecker)
 
     var statusCode int
     var responseBody map[string]interface{}
 
-    // TODO: update points
     switch status {
-    case "cancel":
-        makerchecker.Status = "cancel"
+    case "cancelled":
+        makerchecker.Status = "cancelled"
         break
-    case "ok":
-        statusCode, responseBody = middleware.UpdateMicroserviceById(lambdaFn, apiRoute, makerchecker.Data)
-        fmt.Printf("%v \n%v\n", statusCode, responseBody)
-        makerchecker.Status = "ok"
-        fmt.Println("Update DB!")    
+    case "approved":
+        if makerchecker.Action == "UPDATE" {
+            statusCode, responseBody = middleware.UpdateMicroserviceById(lambdaFn, apiRoute, makerchecker.Data)
+        } else {
+            statusCode, responseBody = middleware.CreateServiceWithMicroservice(lambdaFn, apiRoute, makerchecker.Data)
+        }
+
+        makerchecker.Status = "approved"
         break
     default:
         c.JSON(http.StatusBadRequest, models.HttpError{
             Code: http.StatusBadRequest,
             Message: "Invalid type of status",
-            Data: map[string]interface{}{"data": "Status must be either 'cancel' or 'ok'"},
+            Data: map[string]interface{}{"data": "Status must be either 'approved' or 'cancelled'"},
+        })
+        return
+    }
+
+    if statusCode != 200 && statusCode != 201 {
+        msg := responseBody["message"]
+        if statusCode == 0 {
+            statusCode = 500
+            msg = "Error retrieving data from the microservices."
+        }
+
+        c.JSON(statusCode, models.HttpError{
+            Code: statusCode,
+            Message: "Error",
+            Data: map[string]interface{}{"data": msg},
         })
         return
     }
@@ -82,5 +107,5 @@ func (t MakercheckerController) UpdateMakerchecker (c *gin.Context) {
         return
     }
 
-    c.JSON(200, map[string]interface{}{"Updated Data": makerchecker})
+    c.JSON(200, map[string]interface{}{"Updated Makerchecker": makerchecker, "Updated Data": responseBody})
 } 

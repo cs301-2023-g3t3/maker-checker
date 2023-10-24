@@ -90,3 +90,47 @@ func UpdateMicroserviceById(lambdaFn string, apiRoute string, bodyJSON map[strin
 
     return response.StatusCode, responseBody
 }
+
+func CreateServiceWithMicroservice(lambdaFn string, apiRoute string, bodyJSON map[string]interface{}) (int, map[string]interface{}) {
+    cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(os.Getenv("REGION")))
+    if err != nil {
+        panic(err)
+    }
+
+    if _, found := bodyJSON["id"]; found {
+        delete(bodyJSON, "id")
+    }
+
+    client := lambda.NewFromConfig(cfg)
+
+    body, err := json.Marshal(bodyJSON)
+
+    event := map[string]interface{}{
+        "httpMethod": "POST",
+        "path": fmt.Sprintf("/api/v1/%v", apiRoute),
+        "body": string(body),
+    }
+
+    eventJSON, err := json.Marshal(event)
+    if err != nil {
+        panic(err)
+    }
+    
+    res, err := client.Invoke(context.TODO(), &lambda.InvokeInput{
+        FunctionName: aws.String(lambdaFn),
+        Payload: eventJSON,
+    })
+
+    if err != nil {
+        panic(err)
+    }
+
+    var response models.Response
+    
+    json.Unmarshal(res.Payload, &response)
+
+    var responseBody map[string]interface{}
+    json.Unmarshal([]byte(response.Body), &responseBody)
+
+    return response.StatusCode, responseBody
+}
