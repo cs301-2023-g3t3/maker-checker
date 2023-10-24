@@ -54,7 +54,7 @@ func (t MakercheckerController) GetMakercheckerById(c *gin.Context) {
         c.JSON(http.StatusBadRequest, models.HttpError{
             Code: http.StatusBadRequest,
             Message: msg,
-            Data: nil,
+            Data: map[string]interface{}{"data": err.Error()},
         })
         return
     }

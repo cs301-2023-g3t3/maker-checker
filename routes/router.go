@@ -32,7 +32,9 @@ func InitRoutes() {
     makercheckerGroup.GET("/maker/:makerId", makerchecker.GetByMakerId)
     makercheckerGroup.GET("/maker/:makerId/:status", makerchecker.GetByMakerId)
 
-    makercheckerGroup.POST("", makerchecker.PostMakerchecker)
+    makercheckerGroup.POST("", makerchecker.CreateMakerchecker)
+
+    makercheckerGroup.PUT("/:makercheckerId/:status", makerchecker.UpdateMakerchecker)
 
     router.Run(":"+ PORT)
 }
