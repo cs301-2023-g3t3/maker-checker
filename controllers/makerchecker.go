@@ -170,7 +170,7 @@ func (t MakercheckerController) PostMakerchecker (c *gin.Context) {
     }
 
     // Validate if data has an ID
-    if _, found := makerchecker.Data["id"]; !found {
+    if _, found := makerchecker.Data["id"]; makerchecker.Action != "CREATE" && !found {
         c.JSON(http.StatusBadRequest, models.HttpError{
             Code: http.StatusBadRequest, 
             Message: "Invalid Makerchecker object.",
@@ -194,7 +194,7 @@ func (t MakercheckerController) PostMakerchecker (c *gin.Context) {
     var data map[string]interface{}
     
     // for actions that needs existing data such as UPDATE
-    if makerchecker.Action == "UPDATE" {
+    if makerchecker.Action == "UPDATE" || makerchecker.Action == "DELETE" {
         dataId := fmt.Sprint(makerchecker.Data["id"])
         statusCode, responseBody := middleware.GetFromMicroserviceById(lambdaFn, apiRoute, dataId) // Fetch data from relevant data from microservices
 
@@ -216,18 +216,27 @@ func (t MakercheckerController) PostMakerchecker (c *gin.Context) {
             return
         }
 
-        statusCode, data = utils.GetDifferences(responseBody, makerchecker.Data)
+        if makerchecker.Action == "UPDATE" {
+            statusCode, data = utils.GetDifferences(responseBody, makerchecker.Data)
 
-        if statusCode != 200 {
-            c.JSON(statusCode, models.HttpError{
-                Code: statusCode,
-                Message: "Error",
-                Data: data,
-            })
-            return
-        }
+            if statusCode != 200 {
+                c.JSON(statusCode, models.HttpError{
+                    Code: statusCode,
+                    Message: "Error",
+                    Data: data,
+                })
+                return
+            }
 
-        makerchecker.Data = data
+            makerchecker.Data = data
+        }     
+    } else if makerchecker.Action != "CREATE" {
+        c.JSON(http.StatusBadRequest, models.HttpError{
+            Code: http.StatusBadRequest,
+            Message: "Invalid type of action. Actions must be 'CREATE', 'UPDATE', or 'DELETE' only.",
+            Data: nil,
+        })
+        return
     }
 
     ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
