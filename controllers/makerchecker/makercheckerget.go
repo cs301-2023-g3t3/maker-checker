@@ -44,7 +44,7 @@ func (t MakercheckerController) GetMakercheckerById(c *gin.Context) {
     defer cancel()
 
     var makerchecker models.Makerchecker
-    filter := bson.D{{Key: "makercheckerId", Value: makercheckerId}}
+    filter := bson.M{"makercheckerId": makercheckerId}
     err := collection.FindOne(ctx, filter).Decode(&makerchecker)
     if err != nil {
         msg := "Failed to retrieve makerchecker record"
@@ -56,6 +56,7 @@ func (t MakercheckerController) GetMakercheckerById(c *gin.Context) {
             Message: msg,
             Data: nil,
         })
+        return
     }
 
     c.JSON(http.StatusOK, makerchecker)
@@ -63,6 +64,8 @@ func (t MakercheckerController) GetMakercheckerById(c *gin.Context) {
 
 func (t MakercheckerController) GetByCheckerId(c *gin.Context) {
     checkerId := c.Param("checkerId");
+    status := c.Param("status")
+
     if checkerId == "" {
         c.JSON(http.StatusBadRequest, models.HttpError{
             Code: http.StatusBadRequest, 
@@ -75,7 +78,14 @@ func (t MakercheckerController) GetByCheckerId(c *gin.Context) {
     ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
     defer cancel()
 
-    cursor, err := collection.Find(ctx, bson.M{"checkerId": checkerId})
+    var filter bson.M
+    if status != "" {
+        filter = bson.M{"checkerId": checkerId, "status": status}
+    } else {
+        filter = bson.M{"checkerId": checkerId}
+    }
+
+    cursor, err := collection.Find(ctx, filter)
     if err != nil {
         panic(err)
     }
@@ -97,7 +107,7 @@ func (t MakercheckerController) GetByCheckerId(c *gin.Context) {
         c.JSON(http.StatusNotFound, models.HttpError{
             Code: http.StatusNotFound,
             Message: "Not found",
-            Data: map[string]interface{}{"data": "CheckerID: " + checkerId + " not found."},
+            Data: map[string]interface{}{"data": "Records with CheckerID: " + checkerId + " not found."},
         })
         return
     }
@@ -107,6 +117,7 @@ func (t MakercheckerController) GetByCheckerId(c *gin.Context) {
 
 func (t MakercheckerController) GetByMakerId(c *gin.Context) {
     makerId := c.Param("makerId");
+    status := c.Param("status")
     if makerId == "" {
         c.JSON(http.StatusBadRequest, models.HttpError{
             Code: http.StatusBadRequest, 
@@ -119,7 +130,14 @@ func (t MakercheckerController) GetByMakerId(c *gin.Context) {
     ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
     defer cancel()
 
-    cursor, err := collection.Find(ctx, bson.M{"makerId": makerId})
+    var filter bson.M
+    if status != "" {
+        filter = bson.M{"makerId": makerId, "status": status}
+    } else {
+        filter = bson.M{"makerId": makerId}
+    }
+
+    cursor, err := collection.Find(ctx, filter)
     if err != nil {
         panic(err)
     }
@@ -141,7 +159,7 @@ func (t MakercheckerController) GetByMakerId(c *gin.Context) {
         c.JSON(http.StatusNotFound, models.HttpError{
             Code: http.StatusNotFound,
             Message: "Not found",
-            Data: map[string]interface{}{"data": "MakerID: " + makerId + " not found."},
+            Data: map[string]interface{}{"data": "Records with MakerID: " + makerId + " not found."},
         })
         return
     }

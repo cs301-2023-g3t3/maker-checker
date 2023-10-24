@@ -25,8 +25,12 @@ func InitRoutes() {
     makercheckerGroup := v1.Group("/makerchecker")
     makercheckerGroup.GET("", makerchecker.GetAllMakercheckers)
     makercheckerGroup.GET("/:makercheckerId", makerchecker.GetMakercheckerById)
+
     makercheckerGroup.GET("/checker/:checkerId", makerchecker.GetByCheckerId)
+    makercheckerGroup.GET("/checker/:checkerId/:status", makerchecker.GetByCheckerId)
+
     makercheckerGroup.GET("/maker/:makerId", makerchecker.GetByMakerId)
+    makercheckerGroup.GET("/maker/:makerId/:status", makerchecker.GetByMakerId)
 
     makercheckerGroup.POST("", makerchecker.PostMakerchecker)
 
