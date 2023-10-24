@@ -20,9 +20,7 @@ func GetDifferences(oldData map[string]interface{}, updatedData map[string]inter
         switch t := v.(type) {
         case string:
             if val, ok := updatedData[k].(string); ok {
-                if (t != val) {
-                    newValues[k] = val
-                }
+                newValues[k] = val
             } else {
                 msg := fmt.Sprintf("Key '%s' with value '%v' is not string type, but %T", k, updatedData[k], updatedData[k])
                 return 400, map[string]interface{}{"data": msg}
@@ -32,6 +30,8 @@ func GetDifferences(oldData map[string]interface{}, updatedData map[string]inter
             if val, ok := updatedData[k].(float64); ok {
                 if (t != val){
                     newValues[k] = val - t
+                } else {
+                    newValues[k] = t
                 }
             } else {
                 msg := fmt.Sprintf("Key '%s' with value '%v' is not float64 type, but %T", k, updatedData[k], updatedData[k])

@@ -1,17 +1,14 @@
 package makerchecker
 
 import (
-	// "context"
-	// "fmt"
-	// "makerchecker-api/middleware"
 	"context"
 	"fmt"
+	"makerchecker-api/middleware"
 	"makerchecker-api/models"
+	"makerchecker-api/utils"
 	"time"
 
-	// "makerchecker-api/utils"
 	"net/http"
-	// "time"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
@@ -49,12 +46,22 @@ func (t MakercheckerController) UpdateMakerchecker (c *gin.Context) {
         return
     }
 
+    lambdaFn, apiRoute := utils.ProcessMicroserviceTypes(makerchecker)
+
+    var statusCode int
+    var responseBody map[string]interface{}
+
+    // TODO: update points
     switch status {
     case "cancel":
         makerchecker.Status = "cancel"
+        break
     case "ok":
+        statusCode, responseBody = middleware.UpdateMicroserviceById(lambdaFn, apiRoute, makerchecker.Data)
+        fmt.Printf("%v \n%v\n", statusCode, responseBody)
         makerchecker.Status = "ok"
         fmt.Println("Update DB!")    
+        break
     default:
         c.JSON(http.StatusBadRequest, models.HttpError{
             Code: http.StatusBadRequest,
@@ -64,12 +71,6 @@ func (t MakercheckerController) UpdateMakerchecker (c *gin.Context) {
         return
     }
 
-    if status == "cancel" {
-        makerchecker.Status = "cancel"
-    } else {
-        fmt.Println(status)
-    }
-    
     update := bson.M{"$set": makerchecker}
     _ , err = collection.UpdateOne(ctx, filter, update)
     if err != nil {
