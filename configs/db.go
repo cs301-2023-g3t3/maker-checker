@@ -24,15 +24,15 @@ func DBInstance() *mongo.Client {
         log.Fatal("Failed to create client")
     }
 
-    fmt.Printf("Connecting to MongoDB...")
+    fmt.Printf("Connecting to MongoDB...\n")
     err = client.Connect(ctx)
     if err != nil {
         log.Fatal("Fail to connect to DB")
     }
 
-    fmt.Printf("Success!")
+    fmt.Printf("Success!\n")
 
-    fmt.Printf("Creating Indexes")
+    fmt.Printf("Creating Indexes\n")
 
     InitIndexes(client)
 

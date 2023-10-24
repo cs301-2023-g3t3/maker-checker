@@ -1,4 +1,4 @@
-package controllers
+package makerchecker
 
 import (
 	"makerchecker-api/configs"

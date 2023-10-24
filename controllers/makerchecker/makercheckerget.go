@@ -1,4 +1,4 @@
-package controllers
+package makerchecker
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func (t MakercheckerController) GetAllMakercheckers(c *gin.Context) {
@@ -36,7 +37,31 @@ func (t MakercheckerController) GetAllMakercheckers(c *gin.Context) {
     c.JSON(http.StatusOK, makercheckers)
 }
 
-func (t MakercheckerController) GetPendingWithCheckerId(c *gin.Context) {
+func (t MakercheckerController) GetMakercheckerById(c *gin.Context) {
+    makercheckerId := c.Param("makercheckerId")
+
+    ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+    defer cancel()
+
+    var makerchecker models.Makerchecker
+    filter := bson.D{{Key: "makercheckerId", Value: makercheckerId}}
+    err := collection.FindOne(ctx, filter).Decode(&makerchecker)
+    if err != nil {
+        msg := "Failed to retrieve makerchecker record"
+        if err != mongo.ErrNoDocuments {
+            msg = "No makerchecker record with makercheckerId"
+        }
+        c.JSON(http.StatusBadRequest, models.HttpError{
+            Code: http.StatusBadRequest,
+            Message: msg,
+            Data: nil,
+        })
+    }
+
+    c.JSON(http.StatusOK, makerchecker)
+}
+
+func (t MakercheckerController) GetByCheckerId(c *gin.Context) {
     checkerId := c.Param("checkerId");
     if checkerId == "" {
         c.JSON(http.StatusBadRequest, models.HttpError{
@@ -80,7 +105,7 @@ func (t MakercheckerController) GetPendingWithCheckerId(c *gin.Context) {
     c.JSON(http.StatusOK, makercheckers)
 }
 
-func (t MakercheckerController) GetPendingWithMakerId(c *gin.Context) {
+func (t MakercheckerController) GetByMakerId(c *gin.Context) {
     makerId := c.Param("makerId");
     if makerId == "" {
         c.JSON(http.StatusBadRequest, models.HttpError{
