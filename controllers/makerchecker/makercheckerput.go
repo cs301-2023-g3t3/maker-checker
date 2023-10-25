@@ -70,7 +70,9 @@ func (t MakercheckerController) UpdateMakerchecker (c *gin.Context) {
             statusCode, responseBody = middleware.CreateServiceWithMicroservice(lambdaFn, apiRoute, makerchecker.Data)
         }
 
-        makerchecker.Status = "approved"
+        if statusCode != 200 && statusCode != 201 {
+            makerchecker.Status = "approved"
+        }
         break
     default:
         c.JSON(http.StatusBadRequest, models.HttpError{

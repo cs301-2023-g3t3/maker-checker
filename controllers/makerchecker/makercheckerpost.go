@@ -104,7 +104,7 @@ func (t MakercheckerController) CreateMakerchecker (c *gin.Context) {
 
     makerchecker.Status = "pending" // add default Status: pending
     makerchecker.MakercheckerId = primitive.NewObjectID().Hex() // add makercheckerId ObjectKey
-    result, err := collection.InsertOne(ctx, makerchecker)
+    _, err = collection.InsertOne(ctx, makerchecker)
 
     if err != nil {
         msg := "Failed to insert makerchecker."
@@ -119,5 +119,5 @@ func (t MakercheckerController) CreateMakerchecker (c *gin.Context) {
         return
     }
 
-    c.JSON(http.StatusCreated, map[string]interface{}{"result": makerchecker, "insertedId": result.InsertedID})
+    c.JSON(http.StatusCreated, map[string]interface{}{"result": makerchecker})
 }
