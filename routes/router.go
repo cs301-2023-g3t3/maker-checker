@@ -1,13 +1,22 @@
 package routes
 
-
 import (
-	"os"
+    "context"
 	"makerchecker-api/controllers"
 	"makerchecker-api/controllers/makerchecker"
+	"os"
 
+	"github.com/aws/aws-lambda-go/events"
+	"github.com/aws/aws-lambda-go/lambda"
+	ginadapter "github.com/awslabs/aws-lambda-go-api-proxy/gin"
 	"github.com/gin-gonic/gin"
 )
+
+var ginLambda *ginadapter.GinLambda
+
+func Handler(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	return ginLambda.ProxyWithContext(ctx, req)
+}
 
 func InitRoutes() {
     PORT := os.Getenv("PORT")
@@ -17,12 +26,12 @@ func InitRoutes() {
 
     router := gin.Default()
     
-    v1 := router.Group("/api/v1")
+    v1 := router.Group("/makerchecker")
 
     healthGroup := v1.Group("/health")
     healthGroup.GET("", health.CheckHealth)
 
-    makercheckerGroup := v1.Group("/makerchecker")
+    makercheckerGroup := v1.Group("/record")
     makercheckerGroup.GET("", makerchecker.GetAllMakercheckers)
     makercheckerGroup.GET("/:makercheckerId", makerchecker.GetMakercheckerById)
 
@@ -36,5 +45,11 @@ func InitRoutes() {
 
     makercheckerGroup.PUT("/:makercheckerId/:status", makerchecker.UpdateMakerchecker)
 
-    router.Run(":"+ PORT)
+    env := os.Getenv("ENV")
+    if env == "lambda" {
+        ginLambda = ginadapter.New(router)
+        lambda.Start(Handler)
+    } else {
+        router.Run(":"+ PORT)
+    }
 }

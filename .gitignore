@@ -6,7 +6,7 @@
 *.so
 *.dylib
 .idea
-.env
+.env**
 
 # Test binary, built with `go test -c`
 *.test
@@ -17,3 +17,7 @@
 go.work
 
 api
+
+terraform/.terraform**
+terraform/*.zip
+main

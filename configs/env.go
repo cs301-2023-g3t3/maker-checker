@@ -9,20 +9,26 @@ import (
 )
 
 func EnvMongoUri() string {
-    err := godotenv.Load()
-    if err != nil && os.Getenv("ENV") == "debug" {
-        log.Fatal("Error loading .env file")
-    }
-    
-    if os.Getenv("ENV") == "debug" {
-        return os.Getenv("MONGOURI")
-    } else {
-        user := os.Getenv("MONGO_USERNAME")
-        pass := os.Getenv("MONGO_PASSWORD")
-        host := os.Getenv("MONGO_HOST")
-        port := os.Getenv("MONGO_PORT")
+	var err error
 
-        mongouri := fmt.Sprintf("mongodb://%s:%s@%s:%s", user, pass, host, port)
-        return mongouri
+	env := os.Getenv("ENV")
+	if env != "lambda" {
+        err = godotenv.Load()
+        switch os.Getenv("DB_TYPE") {
+            case "local":
+                err = godotenv.Load(".env.local")
+                return os.Getenv("MONGOURI")
+            case "live":
+                err = godotenv.Load(".env.live")
+            }
+            if err != nil {
+                log.Fatal("Error loading .env file")
+            }
     }
+    user := os.Getenv("MONGO_USERNAME")
+    pass := os.Getenv("MONGO_PASSWORD")
+    host := os.Getenv("MONGO_HOST")
+
+    mongouri := fmt.Sprintf("mongodb+srv://%s:%s@%s.mongodb.net/?retryWrites=true&w=majority", user, pass, host)
+    return mongouri
 }

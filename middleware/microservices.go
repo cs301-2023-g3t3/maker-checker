@@ -5,15 +5,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"makerchecker-api/models"
-	"os"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/lambda"
 )
 
+var region = "ap-southeast-1"
+
 func GetFromMicroserviceById(lambdaFn string, apiRoute string, id string) (int, map[string]interface{}) {
-    cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(os.Getenv("REGION")))
+    cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(region))
     if err != nil {
         panic(err)
     }
@@ -50,7 +51,7 @@ func GetFromMicroserviceById(lambdaFn string, apiRoute string, id string) (int, 
 }
 
 func UpdateMicroserviceById(lambdaFn string, apiRoute string, bodyJSON map[string]interface{}) (int, map[string]interface{}) {
-    cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(os.Getenv("REGION")))
+    cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(region))
     if err != nil {
         panic(err)
     }
@@ -92,7 +93,7 @@ func UpdateMicroserviceById(lambdaFn string, apiRoute string, bodyJSON map[strin
 }
 
 func CreateServiceWithMicroservice(lambdaFn string, apiRoute string, bodyJSON map[string]interface{}) (int, map[string]interface{}) {
-    cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(os.Getenv("REGION")))
+    cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(region))
     if err != nil {
         panic(err)
     }

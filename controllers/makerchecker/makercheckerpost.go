@@ -104,6 +104,9 @@ func (t MakercheckerController) CreateMakerchecker (c *gin.Context) {
 
     makerchecker.Status = "pending" // add default Status: pending
     makerchecker.MakercheckerId = primitive.NewObjectID().Hex() // add makercheckerId ObjectKey
+
+    // TODO: trigger send email
+
     _, err = collection.InsertOne(ctx, makerchecker)
 
     if err != nil {
