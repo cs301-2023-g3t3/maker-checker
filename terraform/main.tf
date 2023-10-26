@@ -64,7 +64,7 @@ resource "aws_api_gateway_method" "this" {
   rest_api_id      = data.aws_ssm_parameter.rest_api_id.value
   resource_id      = aws_api_gateway_resource.this.id
   http_method      = "ANY"
-  authorization    = "CUSTOM"
-  authorizer_id    = "kjkxid"
+  authorization    = "NONE"
+  # authorizer_id    = "kjkxid"
   api_key_required = false
 }
