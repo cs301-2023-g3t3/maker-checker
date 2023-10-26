@@ -48,7 +48,7 @@ resource "aws_lambda_permission" "this" {
   function_name = aws_lambda_function.this.function_name
   principal     = "apigateway.amazonaws.com"
 
-  source_arn = "arn:aws:execute-api:ap-southeast-1:345215350058:${data.aws_ssm_parameter.rest_api_id.value}/*/*/users/*"
+  source_arn = "arn:aws:execute-api:ap-southeast-1:345215350058:${data.aws_ssm_parameter.rest_api_id.value}/*/*/makerchecker/*"
 }
 
 resource "aws_api_gateway_integration" "this" {
