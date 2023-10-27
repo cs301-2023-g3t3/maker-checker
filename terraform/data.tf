@@ -6,12 +6,12 @@ data "aws_iam_role" "existing_role" {
     name = "lambda-execution-role"
 }
 
-data "aws_ssm_parameter" "db_user" {
-  name = "db_user"
+data "aws_ssm_parameter" "mongo_user" {
+  name = "mongo_user"
 }
 
-data "aws_ssm_parameter" "db_password" {
-  name = "db_password"
+data "aws_ssm_parameter" "mongo_password" {
+  name = "mongo_password"
 }
 
 data "aws_ssm_parameter" "mongo_host" {

@@ -30,6 +30,12 @@ func DBInstance() *mongo.Client {
         log.Fatal("Fail to connect to DB")
     }
 
+    fmt.Println("Pinging server ...")
+	err = client.Ping(ctx, nil)
+	if err != nil {
+		log.Fatalf("Failed to ping cluster: %v", err)
+	}
+
     fmt.Printf("Success!\n")
 
     fmt.Printf("Creating Indexes\n")

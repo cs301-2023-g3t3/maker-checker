@@ -22,8 +22,8 @@ resource "aws_lambda_function" "this" {
 
   environment {
     variables = {
-        MONGO_USERNAME=data.aws_ssm_parameter.db_user.value
-        MONGO_PASSWORD=data.aws_ssm_parameter.db_password.value
+        MONGO_USERNAME=data.aws_ssm_parameter.mongo_user.value
+        MONGO_PASSWORD=data.aws_ssm_parameter.mongo_password.value
         MONGO_HOST=data.aws_ssm_parameter.mongo_host.value
         ENV="lambda"
     }
