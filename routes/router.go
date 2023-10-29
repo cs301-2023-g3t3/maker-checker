@@ -1,11 +1,13 @@
 package routes
 
 import (
-    "context"
+	"context"
 	"makerchecker-api/controllers"
 	"makerchecker-api/controllers/makerchecker"
+	"makerchecker-api/middleware"
 	"os"
 
+    "github.com/gin-contrib/cors"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	ginadapter "github.com/awslabs/aws-lambda-go-api-proxy/gin"
@@ -23,15 +25,21 @@ func InitRoutes() {
 
     health := new(controllers.HealthController)
     makerchecker := new(makerchecker.MakercheckerController)
-
-    router := gin.Default()
     
+    router := gin.Default()
+
+    config := cors.DefaultConfig()
+	config.AllowHeaders = append(config.AllowHeaders, "Authorization")
+	config.AllowAllOrigins = true
+	router.Use(cors.New(config))
+
     v1 := router.Group("/makerchecker")
 
     healthGroup := v1.Group("/health")
     healthGroup.GET("", health.CheckHealth)
 
     makercheckerGroup := v1.Group("/record")
+    makercheckerGroup.Use(middleware.DecodeJWT())
     makercheckerGroup.GET("", makerchecker.GetAllMakercheckers)
     makercheckerGroup.GET("/:makercheckerId", makerchecker.GetMakercheckerById)
 

@@ -2,6 +2,7 @@ package makerchecker
 
 import (
 	"context"
+    "fmt"
 	"makerchecker-api/models"
 	"net/http"
 	"time"
@@ -15,6 +16,7 @@ func (t MakercheckerController) GetAllMakercheckers(c *gin.Context) {
     ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
     defer cancel()
 
+    fmt.Println(c.Get("userDetails"))
     cursor, err := collection.Find(ctx, bson.M{})
     if err != nil {
         panic(err)
