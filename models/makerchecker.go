@@ -1,11 +1,7 @@
 package models
 
-type MakercheckerList struct {
-    Makercheckers []Makerchecker `json:"makercheckers" bson:",inline"`
-}
-
 type Makerchecker struct {
-    _Id             string                      `json:"_id" bson:"_id"`
+    Id             string                       `json:"_id" bson:"_id"`
     MakercheckerId  string                      `json:"makercheckerId" bson:"makercheckerId"`
     MakerId         string                      `json:"makerId" bson:"makerId"`
     MakerEmail      string                      `json:"makerEmail" bson:"makerEmail"`

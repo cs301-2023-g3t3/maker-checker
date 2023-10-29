@@ -15,8 +15,8 @@ import (
 )
 
 type ParsedUserClaim struct {
-    Role string 	`json:"role"`
-    Email string `json:"email"`
+    Role        string 	`json:"role"`
+    Email       string  `json:"email"`
 }
 
 func DecodeJWT() gin.HandlerFunc {
@@ -42,6 +42,7 @@ func DecodeJWT() gin.HandlerFunc {
 			return
 		}
 
+        // change this for id_token or access_token
 		privKey, success := setOfKeys.Get(0)
 		if !success {
 			c.String(http.StatusInternalServerError, "Could not find key at given index")
@@ -67,16 +68,26 @@ func DecodeJWT() gin.HandlerFunc {
 			log.Fatal(err)
 		}
 
-        fmt.Println(string(verifiedToken))
-
 		var parsedUser ParsedUserClaim
-		err = json.Unmarshal([]byte(verifiedToken), &parsedUser)
+        err = json.Unmarshal([]byte(verifiedToken), &parsedUser)
 		if err != nil {
 			c.String(http.StatusInternalServerError, fmt.Sprintf("Failed to unmarshal data: %s", err.Error()))
 			c.Abort()
 			return
 		}
-        c.Set("userDetails", parsedUser)
+
+        parsedUserBytes, err := json.Marshal(parsedUser)
+        if err != nil {
+            panic(err)
+        }
+
+        var userDetails map[string]interface{}
+        err = json.Unmarshal(parsedUserBytes, &userDetails)
+        if err != nil {
+            panic(err)
+        }
+
+        c.Set("userDetails", userDetails)
         c.Next()
 	}
 }

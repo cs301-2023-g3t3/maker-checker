@@ -4,13 +4,14 @@ import (
 	"context"
 	"makerchecker-api/controllers"
 	"makerchecker-api/controllers/makerchecker"
+	permission "makerchecker-api/controllers/permissions"
 	"makerchecker-api/middleware"
 	"os"
 
-    "github.com/gin-contrib/cors"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	ginadapter "github.com/awslabs/aws-lambda-go-api-proxy/gin"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -25,6 +26,7 @@ func InitRoutes() {
 
     health := new(controllers.HealthController)
     makerchecker := new(makerchecker.MakercheckerController)
+    permission := new(permission.PermissionController)
     
     router := gin.Default()
 
@@ -42,16 +44,21 @@ func InitRoutes() {
     makercheckerGroup.Use(middleware.DecodeJWT())
     makercheckerGroup.GET("", makerchecker.GetAllMakercheckers)
     makercheckerGroup.GET("/:makercheckerId", makerchecker.GetMakercheckerById)
-
+    makercheckerGroup.GET("/user/:userId", makerchecker.GetRequestsByUserId)
     makercheckerGroup.GET("/checker/:checkerId", makerchecker.GetByCheckerId)
     makercheckerGroup.GET("/checker/:checkerId/:status", makerchecker.GetByCheckerId)
-
     makercheckerGroup.GET("/maker/:makerId", makerchecker.GetByMakerId)
     makercheckerGroup.GET("/maker/:makerId/:status", makerchecker.GetByMakerId)
-
     makercheckerGroup.POST("", makerchecker.CreateMakerchecker)
-
     makercheckerGroup.PUT("/:makercheckerId/:status", makerchecker.UpdateMakerchecker)
+
+    permissionGroup := v1.Group("/permission") 
+    permissionGroup.Use(middleware.DecodeJWT())
+    permissionGroup.GET("", permission.GetAllPermission)
+    permissionGroup.GET("/:id", permission.GetPermissionById)
+    permissionGroup.POST("", permission.CreateMakercheckerPermission)
+    permissionGroup.PUT("/:id", permission.UpdatePermissionById)
+    permissionGroup.DELETE("/:id", permission.DeletePermissionById)
 
     env := os.Getenv("ENV")
     if env == "lambda" {

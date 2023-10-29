@@ -2,7 +2,6 @@ package makerchecker
 
 import (
 	"context"
-    "fmt"
 	"makerchecker-api/models"
 	"net/http"
 	"time"
@@ -12,11 +11,14 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+func generateUniqueKey (data bson.M) string {
+    return data["makercheckerId"].(string)
+}
+
 func (t MakercheckerController) GetAllMakercheckers(c *gin.Context) {
     ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
     defer cancel()
 
-    fmt.Println(c.Get("userDetails"))
     cursor, err := collection.Find(ctx, bson.M{})
     if err != nil {
         panic(err)
@@ -37,6 +39,84 @@ func (t MakercheckerController) GetAllMakercheckers(c *gin.Context) {
     }
 
     c.JSON(http.StatusOK, makercheckers)
+}
+
+func (t MakercheckerController) GetRequestsByUserId(c *gin.Context) {
+    // TODO: pivot from query params to using decoded JWT
+    userId := c.Param("userId")
+    if userId == "" {
+        c.JSON(http.StatusBadRequest, models.HttpError{
+            Code: http.StatusBadRequest,
+            Message: "userId cannot be empty",
+        })
+        return
+    }
+
+    ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+    defer cancel()
+
+    makerData := make(map[string]interface{})
+    checkerData := make(map[string]interface{})
+
+    makerFilter := bson.M{"makerId": userId}
+    makerCursor, err := collection.Find(ctx, makerFilter)
+    if err != nil {
+        panic(err)
+    }
+
+    checkerFilter := bson.M{"checkerId": userId}
+    checkerCursor, err := collection.Find(ctx, checkerFilter)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, models.HttpError{
+            Code: http.StatusInternalServerError,
+            Message: err.Error(),
+        })
+        return
+    }
+
+    defer makerCursor.Close(ctx)
+    defer checkerCursor.Close(ctx)
+
+    // Iterate through makerCursor and populate makerData
+    for makerCursor.Next(ctx) {
+        var makerResult bson.M
+        if err := makerCursor.Decode(&makerResult); err != nil {
+            c.JSON(http.StatusInternalServerError, models.HttpError{
+                Code: http.StatusInternalServerError,
+                Message: err.Error(),
+            })
+            return
+        }
+        makerData[generateUniqueKey(makerResult)] = makerResult
+    }
+
+    // Iterate through checkerCursor and populate checkerData
+    for checkerCursor.Next(ctx) {
+        var checkerResult bson.M
+        if err := checkerCursor.Decode(&checkerResult); err != nil {
+            c.JSON(http.StatusInternalServerError, models.HttpError{
+                Code: http.StatusInternalServerError,
+                Message: err.Error(),
+            })
+            return
+        }
+        checkerData[generateUniqueKey(checkerResult)] = checkerResult
+    }
+
+    if len(makerData) == 0 && len(checkerData) == 0 {
+        c.JSON(http.StatusNotFound, models.HttpError{
+            Code: http.StatusNotFound,
+            Message: "No requests can be found with this userId",
+        })
+        return
+    }
+
+    res := map[string]interface{}{
+        "makerRequests": makerData,
+        "checkerRequests": checkerData,
+    }
+
+    c.JSON(http.StatusOK, res)
 }
 
 func (t MakercheckerController) GetMakercheckerById(c *gin.Context) {
@@ -65,10 +145,11 @@ func (t MakercheckerController) GetMakercheckerById(c *gin.Context) {
 }
 
 func (t MakercheckerController) GetByCheckerId(c *gin.Context) {
-    checkerId := c.Param("checkerId");
+    // TODO: pivot from query params to using decoded JWT
+    userId := c.Param("userId")
     status := c.Param("status")
 
-    if checkerId == "" {
+    if userId == "" {
         c.JSON(http.StatusBadRequest, models.HttpError{
             Code: http.StatusBadRequest, 
             Message: "Error",
@@ -82,9 +163,9 @@ func (t MakercheckerController) GetByCheckerId(c *gin.Context) {
 
     var filter bson.M
     if status != "" {
-        filter = bson.M{"checkerId": checkerId, "status": status}
+        filter = bson.M{"checkerId": userId, "status": status}
     } else {
-        filter = bson.M{"checkerId": checkerId}
+        filter = bson.M{"checkerId": userId}
     }
 
     cursor, err := collection.Find(ctx, filter)
@@ -109,7 +190,7 @@ func (t MakercheckerController) GetByCheckerId(c *gin.Context) {
         c.JSON(http.StatusNotFound, models.HttpError{
             Code: http.StatusNotFound,
             Message: "Not found",
-            Data: map[string]interface{}{"data": "Records with CheckerID: " + checkerId + " not found."},
+            Data: map[string]interface{}{"data": "Checker records with userId: " + userId + " not found."},
         })
         return
     }
@@ -118,13 +199,13 @@ func (t MakercheckerController) GetByCheckerId(c *gin.Context) {
 }
 
 func (t MakercheckerController) GetByMakerId(c *gin.Context) {
-    makerId := c.Param("makerId");
+    userId := c.Param("userId");
     status := c.Param("status")
-    if makerId == "" {
+    if userId == "" {
         c.JSON(http.StatusBadRequest, models.HttpError{
             Code: http.StatusBadRequest, 
             Message: "Error",
-            Data: map[string]interface{}{"data": "MakerId parameter cannot be empty"},
+            Data: map[string]interface{}{"data": "userId parameter cannot be empty"},
         })
         return
     }
@@ -134,9 +215,9 @@ func (t MakercheckerController) GetByMakerId(c *gin.Context) {
 
     var filter bson.M
     if status != "" {
-        filter = bson.M{"makerId": makerId, "status": status}
+        filter = bson.M{"makerId": userId, "status": status}
     } else {
-        filter = bson.M{"makerId": makerId}
+        filter = bson.M{"makerId": userId}
     }
 
     cursor, err := collection.Find(ctx, filter)
@@ -161,7 +242,7 @@ func (t MakercheckerController) GetByMakerId(c *gin.Context) {
         c.JSON(http.StatusNotFound, models.HttpError{
             Code: http.StatusNotFound,
             Message: "Not found",
-            Data: map[string]interface{}{"data": "Records with MakerID: " + makerId + " not found."},
+            Data: map[string]interface{}{"data": "Maker Records with userID: " + userId + " not found."},
         })
         return
     }
