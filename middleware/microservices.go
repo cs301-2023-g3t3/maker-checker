@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -23,7 +24,7 @@ func GetFromMicroserviceById(lambdaFn string, apiRoute string, id string) (int, 
 
     event := map[string]interface{}{
         "httpMethod": "GET",
-        "path": fmt.Sprintf("/api/v1/%v/%v", apiRoute, id),
+        "path": fmt.Sprintf("/%v/%v", apiRoute, id),
     }
 
     eventJSON, err := json.Marshal(event)
@@ -50,6 +51,59 @@ func GetFromMicroserviceById(lambdaFn string, apiRoute string, id string) (int, 
     return response.StatusCode, responseBody
 }
 
+func GetListofUsersWithRoles(checkerRoles []string) (int, []map[string]interface{}) {
+    cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(region))
+    if err != nil {
+        panic(err)
+    }
+
+    client := lambda.NewFromConfig(cfg)
+
+    bodyJSON := map[string]interface{}{
+        "roles": checkerRoles,
+    }
+
+    body, err := json.Marshal(bodyJSON)
+
+    event := map[string]interface{}{
+        "httpMethod": "POST",
+        "path": "/users/accounts/with-roles",
+        "body": string(body),
+    }
+
+    eventJSON, err := json.Marshal(event)
+    if err != nil {
+        panic(err)
+    }
+    
+    res, err := client.Invoke(context.TODO(), &lambda.InvokeInput{
+        FunctionName: aws.String("user-storage-api"),
+        Payload: eventJSON,
+    })
+
+    if err != nil {
+        panic(err)
+    }
+
+    var response models.Response
+
+    reader := bytes.NewReader(res.Payload)
+    decode := json.NewDecoder(reader)
+    err = decode.Decode(&response)
+    if err != nil {
+        panic(err)
+    }
+
+    var jsonObject []map[string]interface{}
+    err = json.Unmarshal([]byte(response.Body), &jsonObject)
+    if err != nil {
+        panic(err)
+    }
+    fmt.Printf("%T", jsonObject)
+
+    return response.StatusCode, jsonObject
+}
+
 func UpdateMicroserviceById(lambdaFn string, apiRoute string, bodyJSON map[string]interface{}) (int, map[string]interface{}) {
     cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(region))
     if err != nil {
@@ -64,7 +118,7 @@ func UpdateMicroserviceById(lambdaFn string, apiRoute string, bodyJSON map[strin
 
     event := map[string]interface{}{
         "httpMethod": "PUT",
-        "path": fmt.Sprintf("/api/v1/%v/%v", apiRoute, id),
+        "path": fmt.Sprintf("/%v/%v", apiRoute, id),
         "body": string(body),
     }
 

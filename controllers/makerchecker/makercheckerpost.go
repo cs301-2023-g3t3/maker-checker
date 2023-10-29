@@ -3,21 +3,100 @@ package makerchecker
 import (
 	"context"
 	"fmt"
+	"makerchecker-api/controllers/permissions"
 	"makerchecker-api/middleware"
 	"makerchecker-api/models"
 	"makerchecker-api/utils"
 	"net/http"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 )
+
+func (t MakercheckerController) CheckMakerchecker (c *gin.Context) {
+    type ValidMakerchecker struct {
+        MakerRole       string                      `json:"makerRole" bson:"makerRole" validate:"required"`
+        CheckerRole     string                      `json:"checkerRole" bson:"checkerRole" validate:"required"`
+        Endpoint        string                      `json:"endpoint" bson:"endpoint" validate:"required"`
+    }
+
+    var validMakerchecker ValidMakerchecker
+
+    if err := c.BindJSON(&validMakerchecker); err != nil {
+        c.JSON(http.StatusBadRequest, models.HttpError{
+            Code: http.StatusBadRequest,
+            Message: "Error",
+            Data: map[string]interface{}{"data": err.Error()},
+        })
+        return
+    }
+
+    if err := validate.Struct(validMakerchecker); err != nil {
+        c.JSON(http.StatusBadRequest, models.HttpError{
+            Code: http.StatusBadRequest, 
+            Message: "Invalid data to check for makerchecker",
+            Data: map[string]interface{}{"data": err.Error()},
+        })
+        return
+    }
+
+    requestRoute := validMakerchecker.Endpoint
+    // Validate if a route for makerchecker exists
+    permission, found, err := permission.FindPermissionByRoute(requestRoute)
+    if !found {
+        c.JSON(http.StatusNotFound, models.HttpError{
+            Code: http.StatusNotFound,
+            Message: "Endpoint route does not allow makerchecker",
+            Data: map[string]interface{}{"data": err},
+        })
+        return
+    }
+
+    if validMakerRole := slices.Contains(permission.Maker, validMakerchecker.MakerRole); !validMakerRole {
+        c.JSON(http.StatusForbidden, models.HttpError{
+            Code: http.StatusForbidden, 
+            Message: "Maker does not have enough permission to do makerchecker",
+            Data: map[string]interface{}{"data": "Invalid maker role"},
+        })
+        return
+    }
+
+    if validCheckerRole := slices.Contains(permission.Checker, validMakerchecker.CheckerRole); !validCheckerRole {
+        c.JSON(http.StatusForbidden, models.HttpError{
+            Code: http.StatusForbidden, 
+            Message: "Checker does not have enough permission to do makerchecker",
+            Data: map[string]interface{}{"data": "Invalid checker role"},
+        })
+        return
+    }
+
+    statusCode, responseBody := middleware.GetListofUsersWithRoles(permission.Checker) 
+
+    if statusCode != 200 {
+        msg := fmt.Sprint(responseBody)
+        if statusCode == 0 {
+            statusCode = 500
+            msg = "Error retrieving data from user microservice."
+        }
+
+        c.JSON(statusCode, models.HttpError{
+            Code: statusCode,
+            Message: "Error",
+            Data: map[string]interface{}{"data": msg},
+        })
+        return
+    }
+
+    c.JSON(http.StatusOK, responseBody)
+}
 
 func (t MakercheckerController) CreateMakerchecker (c *gin.Context) {
     makerchecker := new(models.Makerchecker)
-    err := c.BindJSON(makerchecker)
-    if err != nil {
+    
+    if err := c.BindJSON(makerchecker); err != nil {
         c.JSON(http.StatusBadRequest, models.HttpError{
             Code: http.StatusBadRequest,
             Message: "Invalid Makerchecker object.",
@@ -26,18 +105,48 @@ func (t MakercheckerController) CreateMakerchecker (c *gin.Context) {
         return
     }
 
-    // Validate if data is empty
-    if len(makerchecker.Data) == 0 {
+    if err := validate.Struct(makerchecker); err != nil {
         c.JSON(http.StatusBadRequest, models.HttpError{
             Code: http.StatusBadRequest, 
             Message: "Invalid Makerchecker object.",
-            Data: map[string]interface{}{"data": "Data cannot be empty"},
+            Data: map[string]interface{}{"data": err.Error()},
+        })
+        return
+    }
+
+    requestRoute := makerchecker.Endpoint
+    // Validate if a route for makerchecker exists
+    permission, found, err := permission.FindPermissionByRoute(requestRoute)
+    if !found {
+        c.JSON(http.StatusNotFound, models.HttpError{
+            Code: http.StatusNotFound,
+            Message: "Endpoint route does not allow makerchecker",
+            Data: map[string]interface{}{"data": err},
+        })
+        return
+    }
+
+    if validMakerRole := slices.Contains(permission.Maker, makerchecker.MakerRole); !validMakerRole {
+        c.JSON(http.StatusForbidden, models.HttpError{
+            Code: http.StatusForbidden, 
+            Message: "Maker does not have enough permission to do makerchecker",
+            Data: map[string]interface{}{"data": "Invalid maker role"},
+        })
+        return
+    }
+
+    if validCheckerRole := slices.Contains(permission.Checker, makerchecker.CheckerRole); !validCheckerRole {
+        c.JSON(http.StatusForbidden, models.HttpError{
+            Code: http.StatusForbidden, 
+            Message: "Checker does not have enough permission to do makerchecker",
+            Data: map[string]interface{}{"data": "Invalid checker role"},
         })
         return
     }
 
     // Get relevant Lambda Function and API Routes
-    lambdaFn, apiRoute := utils.ProcessMicroserviceTypes(*makerchecker)
+    endpointParts := strings.Split(makerchecker.Endpoint, "/")
+    lambdaFn, apiRoute := utils.ProcessMicroserviceTypes(endpointParts[3])
     
     if lambdaFn == "Error" {
         c.JSON(http.StatusBadRequest, models.HttpError{
@@ -48,8 +157,9 @@ func (t MakercheckerController) CreateMakerchecker (c *gin.Context) {
         return
     }
 
-    switch makerchecker.Action {
-    case "UPDATE" :
+    switch endpointParts[2] {
+    // TODO: check key-value pairs with relevant microservices, i.e. models
+    case "PUT": case "DELETE":
         if _, found := makerchecker.Data["id"]; !found {
             c.JSON(http.StatusBadRequest, models.HttpError{
                 Code: http.StatusBadRequest,
@@ -60,7 +170,7 @@ func (t MakercheckerController) CreateMakerchecker (c *gin.Context) {
         }
         dataId := fmt.Sprint(makerchecker.Data["id"])
 
-        // Fetch data from relevant data from microservices
+        // Check if data exists in relevant database
         statusCode, responseBody := middleware.GetFromMicroserviceById(lambdaFn, apiRoute, dataId) 
 
         // Error fetching data
@@ -79,15 +189,7 @@ func (t MakercheckerController) CreateMakerchecker (c *gin.Context) {
             return
         }
         break
-    case "CREATE":
-        if makerchecker.Database != "users" {
-            c.JSON(http.StatusBadRequest, models.HttpError{
-                Code: http.StatusBadRequest,
-                Message: "Invalid action",
-                Data: nil,
-            })
-            return
-        }
+    case "POST":
         break
     default:
         c.JSON(http.StatusBadRequest, models.HttpError{
@@ -98,25 +200,20 @@ func (t MakercheckerController) CreateMakerchecker (c *gin.Context) {
         return
     }
 
-
     ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
     defer cancel()
 
     makerchecker.Status = "pending" // add default Status: pending
-    makerchecker.MakercheckerId = primitive.NewObjectID().Hex() // add makercheckerId ObjectKey
+    makerchecker.Id = primitive.NewObjectID().Hex() // add makercheckerId ObjectKey
 
-    // TODO: trigger send email
+   // TODO: trigger send email
 
     _, err = collection.InsertOne(ctx, makerchecker)
 
     if err != nil {
-        msg := "Failed to insert makerchecker."
-        if mongo.IsDuplicateKeyError(err) {
-            msg = "MakercheckId already exists."
-        }
         c.JSON(http.StatusBadRequest, models.HttpError{
             Code: http.StatusBadRequest,
-            Message: msg,
+            Message:  "Failed to insert makerchecker.",
             Data: map[string]interface{}{"data": err.Error()},
         })
         return

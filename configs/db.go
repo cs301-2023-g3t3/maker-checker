@@ -46,17 +46,6 @@ func DBInstance() *mongo.Client {
 }
 
 func InitIndexes(client *mongo.Client) {
-    makercheckerCollection := OpenCollection(client, "makerchecker")
-    makercheckerIndexModel := mongo.IndexModel{
-        Keys: bson.D{{Key: "makercheckerId", Value: -1}},
-        Options: options.Index().SetUnique(true),
-    }
-
-    makercheckerIndexCreated, err := makercheckerCollection.Indexes().CreateOne(context.Background(), makercheckerIndexModel)
-    if err != nil {
-        log.Fatal(err)
-    }
-
     permissionCollection := OpenCollection(client, "permission")
     permissionIndexModel := mongo.IndexModel{
         Keys: bson.D{{Key: "route", Value: -1}},
@@ -68,7 +57,6 @@ func InitIndexes(client *mongo.Client) {
         log.Fatal(err)
     }
 
-    fmt.Printf("Created Makerchecker Index %s\n", makercheckerIndexCreated)
     fmt.Printf("Created Permission Index %s\n", permissionIndexCreated)
 }
 

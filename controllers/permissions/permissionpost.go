@@ -12,43 +12,6 @@ import (
 )
 
 func (t PermissionController) CreateMakercheckerPermission(c *gin.Context) {
-    userDetails, ok := c.Get("userDetails")
-    if !ok {
-        c.JSON(http.StatusForbidden, models.HttpError{
-            Code: http.StatusForbidden,
-            Message: "Unable to retrieve user details",
-            Data: map[string]interface{}{"data": ok},
-        })
-        return
-    }
-
-    userDetailsMap, ok := userDetails.(map[string]interface{})
-    if !ok {
-        c.JSON(http.StatusInternalServerError, models.HttpError{
-            Code: http.StatusInternalServerError,
-            Message: "Failed to convert user details to map",
-            Data: map[string]interface{}{"error": "Type assertion failed"},
-        })
-        return
-    }
-
-    role, roleExists := userDetailsMap["role"]
-    if !roleExists {
-        c.JSON(http.StatusForbidden, models.HttpError{
-            Code: http.StatusForbidden,
-            Message: "Role information not found in user details",
-        })
-        return
-    }
-
-    if role != "Owner" {
-        c.JSON(http.StatusForbidden, models.HttpError{
-            Code: http.StatusForbidden,
-            Message: "Not enough permission to create permission record",
-        })
-        return
-    }
-
     var permission models.Permission
     
     if err := c.BindJSON(&permission); err != nil {

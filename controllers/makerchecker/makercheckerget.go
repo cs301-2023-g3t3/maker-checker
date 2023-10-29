@@ -41,8 +41,8 @@ func (t MakercheckerController) GetAllMakercheckers(c *gin.Context) {
     c.JSON(http.StatusOK, makercheckers)
 }
 
+// Get both maker and checker requests using UserId
 func (t MakercheckerController) GetRequestsByUserId(c *gin.Context) {
-    // TODO: pivot from query params to using decoded JWT
     userId := c.Param("userId")
     if userId == "" {
         c.JSON(http.StatusBadRequest, models.HttpError{
@@ -120,18 +120,25 @@ func (t MakercheckerController) GetRequestsByUserId(c *gin.Context) {
 }
 
 func (t MakercheckerController) GetMakercheckerById(c *gin.Context) {
-    makercheckerId := c.Param("makercheckerId")
+    id := c.Param("id")
+    if id == "" {
+        c.JSON(http.StatusBadRequest, models.HttpError{
+            Code: http.StatusBadRequest,
+            Message: "Id cannot be empty",
+        })
+        return
+    }
 
     ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
     defer cancel()
 
     var makerchecker models.Makerchecker
-    filter := bson.M{"makercheckerId": makercheckerId}
+    filter := bson.M{"_id": id}
     err := collection.FindOne(ctx, filter).Decode(&makerchecker)
     if err != nil {
         msg := "Failed to retrieve makerchecker record"
         if err != mongo.ErrNoDocuments {
-            msg = "No makerchecker record with makercheckerId"
+            msg = "No makerchecker record with id"
         }
         c.JSON(http.StatusBadRequest, models.HttpError{
             Code: http.StatusBadRequest,
@@ -145,7 +152,6 @@ func (t MakercheckerController) GetMakercheckerById(c *gin.Context) {
 }
 
 func (t MakercheckerController) GetByCheckerId(c *gin.Context) {
-    // TODO: pivot from query params to using decoded JWT
     userId := c.Param("userId")
     status := c.Param("status")
 
