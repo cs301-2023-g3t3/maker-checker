@@ -88,7 +88,6 @@ func TriggerMessageQueueToEmail(makerEmail string, checkerEmail string) string {
 
     sMInput := &sqs.SendMessageInput{
         DelaySeconds: 0,
-        MessageGroupId: aws.String("makerchecker"),
         MessageBody: aws.String(string(dataJSON)),
         QueueUrl: aws.String(queueURL),
     }
