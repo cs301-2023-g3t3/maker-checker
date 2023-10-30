@@ -52,7 +52,7 @@ func InitRoutes() {
 
     makercheckerGroup.POST("", makerchecker.CreateMakerchecker)
     makercheckerGroup.POST("/check", makerchecker.CheckMakerchecker)
-    // makercheckerGroup.PUT("/:makercheckerId/:status", makerchecker.UpdateMakerchecker)
+    makercheckerGroup.PUT("/:id/:status", makerchecker.UpdateMakerchecker)
 
     permissionGroup := v1.Group("/permission") 
     // permissionGroup.Use(middleware.DecodeJWT())
