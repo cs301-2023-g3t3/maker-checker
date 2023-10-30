@@ -20,10 +20,10 @@ resource "aws_lambda_function" "this" {
   source_code_hash = filebase64sha256("./main.zip")
   timeout          = 10
 
-  vpc_config {
-    subnet_ids = ["subnet-0fe559864bcf3de70", "subnet-01a4cfeeb80346379", "subnet-0b581c9020e4d955a"]
-    security_group_ids = ["sg-05a445100fc469383"]
-  }
+  # vpc_config {
+  #   subnet_ids = ["subnet-0fe559864bcf3de70", "subnet-01a4cfeeb80346379", "subnet-0b581c9020e4d955a"]
+  #   security_group_ids = ["sg-05a445100fc469383"]
+  # }
 
   environment {
     variables = {
