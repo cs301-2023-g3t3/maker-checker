@@ -48,7 +48,7 @@ func DBInstance() *mongo.Client {
 func InitIndexes(client *mongo.Client) {
     permissionCollection := OpenCollection(client, "permission")
     permissionIndexModel := mongo.IndexModel{
-        Keys: bson.D{{Key: "route", Value: -1}},
+        Keys: bson.D{{Key: "endpoint", Value: -1}},
         Options: options.Index().SetUnique(true),
     }
 

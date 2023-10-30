@@ -23,9 +23,9 @@ func (t PermissionController) UpdatePermissionById(c *gin.Context) {
     }
 
     type UpdatePermission struct {
-        Route           string                      `json:"route" bson:"route" validation:"required"`
-        Maker          []string                     `json:"maker" bson:"maker" validation:"required"`
-        Checker          []string                   `json:"checker" bson:"checker" validation:"required"`
+        Endpoint       string                     `json:"endpoint" bson:"endpoint" validation:"required"`
+        Maker          []string                   `json:"maker" bson:"maker" validation:"required"`
+        Checker        []string                   `json:"checker" bson:"checker" validation:"required"`
     }
 
     var permission UpdatePermission
@@ -68,5 +68,5 @@ func (t PermissionController) UpdatePermissionById(c *gin.Context) {
         return
     }
 
-    c.JSON(200, map[string]interface{}{"Updated Makerchecker": permission})
+    c.JSON(200, map[string]interface{}{"Updated Permission": permission})
 } 

@@ -18,7 +18,7 @@ import (
 )
 
 func Validate(makerRole string, checkerRole string, endpoint string) (int, string, error, *models.Permission) {
-    permission, found, err := permission.FindPermissionByRoute(endpoint)
+    permission, found, err := permission.FindPermissionByEndpoint(endpoint)
     if !found {
         msg := "Endpoint route does not allow makerchecker"
         return http.StatusNotFound, msg, err, nil
@@ -33,9 +33,9 @@ func Validate(makerRole string, checkerRole string, endpoint string) (int, strin
         return http.StatusForbidden, msg, errors.New("Invalid maker role"), nil
     }
 
-    if validCheckerRole := slices.Contains(permission.Checker, checkerRole); !validCheckerRole {
+    if validCheckerRole := slices.Contains(permission.Checker, checkerRole); checkerRole != "" && !validCheckerRole{
         msg := "Checker does not have enough permission to do makerchecker"
-        return http.StatusForbidden, msg, errors.New("Invalid checker role"), nil
+        return http.StatusForbidden, msg, errors.New("Checker maker role"), nil
     }
 
     return http.StatusOK, "Success", nil, &permission
@@ -44,7 +44,6 @@ func Validate(makerRole string, checkerRole string, endpoint string) (int, strin
 func (t MakercheckerController) CheckMakerchecker (c *gin.Context) {
     type ValidMakerchecker struct {
         MakerRole       string                      `json:"makerRole" bson:"makerRole" validate:"required"`
-        CheckerRole     string                      `json:"checkerRole" bson:"checkerRole" validate:"required"`
         Endpoint        string                      `json:"endpoint" bson:"endpoint" validate:"required"`
     }
 
@@ -70,16 +69,17 @@ func (t MakercheckerController) CheckMakerchecker (c *gin.Context) {
 
     requestRoute := validMakerchecker.Endpoint
 
-    statusCode, body, err, permission := Validate(validMakerchecker.MakerRole, validMakerchecker.CheckerRole, requestRoute)
+    statusCode, body, err, permission := Validate(validMakerchecker.MakerRole, "", requestRoute)
     if statusCode != http.StatusOK {
         c.JSON(statusCode, models.HttpError{
             Code: statusCode,
             Message: body,
             Data: map[string]interface{}{"data": err},
         })
+        return
     }
 
-    statusCode, responseBody := middleware.GetListofUsersWithRoles(permission.Checker) 
+    statusCode, responseBody := middleware.GetListofUsersWithRolesWithMicroservice(permission.Checker) 
 
     if statusCode != 200 {
         msg := fmt.Sprint(responseBody)
@@ -129,6 +129,7 @@ func (t MakercheckerController) CreateMakerchecker (c *gin.Context) {
             Message: body,
             Data: map[string]interface{}{"data": err},
         })
+        return
     }
 
     // Get relevant Lambda Function and API Routes
@@ -145,7 +146,6 @@ func (t MakercheckerController) CreateMakerchecker (c *gin.Context) {
     }
 
     switch endpointParts[2] {
-    // TODO: check key-value pairs with relevant microservices, i.e. models
     case "PUT": case "DELETE":
         if _, found := makerchecker.Data["id"]; !found {
             c.JSON(http.StatusBadRequest, models.HttpError{
@@ -182,7 +182,7 @@ func (t MakercheckerController) CreateMakerchecker (c *gin.Context) {
         c.JSON(http.StatusBadRequest, models.HttpError{
             Code: http.StatusBadRequest,
             Message: "Invalid action",
-            Data: nil,
+            Data: map[string]interface{}{"data": "Action should be 'POST', 'PUT', or 'DELETE' only"},
         })
         return
     }

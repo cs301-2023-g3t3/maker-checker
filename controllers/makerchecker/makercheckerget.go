@@ -12,7 +12,11 @@ import (
 )
 
 func generateUniqueKey (data bson.M) string {
-    return data["makercheckerId"].(string)
+    if data["makerId"] != 0 {
+        return data["makerId"].(string)
+    } else {
+        return data["checkerId"].(string)
+    }
 }
 
 func (t MakercheckerController) GetAllMakercheckers(c *gin.Context) {

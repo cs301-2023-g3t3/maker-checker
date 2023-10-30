@@ -22,13 +22,14 @@ func RequestApproved(lambdaFn string, apiRoute string, data map[string]interface
 
     switch action {
     case "PUT":
-        statusCode, responseBody = middleware.UpdateMicroserviceById(lambdaFn, apiRoute, data)
+        statusCode, responseBody = middleware.UpdateWithMicroservice(lambdaFn, apiRoute, data)
         break
     case "POST":
-        statusCode, responseBody = middleware.CreateServiceWithMicroservice(lambdaFn, apiRoute, data)
+        statusCode, responseBody = middleware.CreateWithMicroservice(lambdaFn, apiRoute, data)
         break
     case "DELETE":
-        fmt.Println("help")
+        statusCode, responseBody = middleware.DeleteFromMicroserviceById(lambdaFn, apiRoute, fmt.Sprint(data["id"]))
+        fmt.Println(responseBody)
         break
     default:
         return http.StatusBadRequest, map[string]interface{}{"data": "Action must be either 'POST', 'PUT', or 'DELETE' only"}
@@ -88,7 +89,7 @@ func (t MakercheckerController) UpdateMakerchecker (c *gin.Context) {
     } else if status == "approved" {
         statusCode, responseBody = RequestApproved(lambdaFn, apiRoute, makerchecker.Data, endpointParts[2])
         if statusCode != 200 && statusCode != 201 {
-            msg := responseBody["message"]
+            msg := fmt.Sprint(responseBody)
             if statusCode == 0 {
                 statusCode = 500
                 msg = "Error retrieving data from the microservices."

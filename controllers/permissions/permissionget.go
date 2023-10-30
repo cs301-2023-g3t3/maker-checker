@@ -12,13 +12,13 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func FindPermissionByRoute(route string) (models.Permission, bool, error) {
+func FindPermissionByEndpoint(endpoint string) (models.Permission, bool, error) {
     ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
     defer cancel()
 
     var permission models.Permission
 
-    filter := bson.M{"route": route}
+    filter := bson.M{"endpoint": endpoint}
     err := collection.FindOne(ctx, filter).Decode(&permission)
     if err != nil {
         return permission, false, err
@@ -95,10 +95,10 @@ func (t PermissionController) GetPermissionById(c *gin.Context) {
     c.JSON(http.StatusOK, permission)
 }
 
-func (t PermissionController) GetPermissionByRoute (c *gin.Context) {
+func (t PermissionController) GetPermissionByEndpoint (c *gin.Context) {
     var requestBody map[string]interface{}
     err := json.NewDecoder(c.Request.Body).Decode(&requestBody)
-    route, ok := requestBody["route"]
+    endpoint, ok := requestBody["endpoint"]
     if err != nil {
         c.JSON(
             http.StatusInternalServerError, models.HttpError{
@@ -113,26 +113,26 @@ func (t PermissionController) GetPermissionByRoute (c *gin.Context) {
         c.JSON(
             http.StatusBadRequest, models.HttpError{
                 Code: http.StatusBadRequest, 
-                Message: "'route' must be in the request body",
+                Message: "'endpoint' must be in the request body",
         })
         return
     }
 
-    routeStr, ok := route.(string)
+    endpointStr, ok := endpoint.(string)
     if !ok {
         c.JSON(http.StatusBadRequest, models.HttpError{
             Code: http.StatusBadRequest,
-            Message: "'route' must be a string",
+            Message: "'endpoint' must be a string",
         })
         return
     }
 
-    permission, found, err := FindPermissionByRoute(routeStr)
+    permission, found, err := FindPermissionByEndpoint(endpointStr)
     if !found {
         c.JSON(http.StatusNotFound, models.HttpError{
             Code: http.StatusNotFound,
             Message: "Error",
-            Data: map[string]interface{}{"data": err},
+            Data: map[string]interface{}{"data": "Permission not found"},
         })
         return
     }

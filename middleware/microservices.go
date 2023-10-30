@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"makerchecker-api/models"
+	"net/http"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -43,15 +44,27 @@ func GetFromMicroserviceById(lambdaFn string, apiRoute string, id string) (int, 
 
     var response models.Response
     
-    json.Unmarshal(res.Payload, &response)
+    reader := bytes.NewReader(res.Payload)
+    decode := json.NewDecoder(reader)
+    err = decode.Decode(&response)
+    if err != nil {
+        panic(err)
+    }
 
-    var responseBody map[string]interface{}
-    json.Unmarshal([]byte(response.Body), &responseBody)
+    if response.Body == "404 page not found"{
+        return http.StatusNotFound, map[string]interface{}{"data": response.Body}
+    }
 
-    return response.StatusCode, responseBody
+    var jsonObject map[string]interface{}
+    err = json.Unmarshal([]byte(response.Body), &jsonObject)
+    if err != nil {
+        panic(err)
+    }
+
+    return response.StatusCode, jsonObject
 }
 
-func GetListofUsersWithRoles(checkerRoles []string) (int, []map[string]interface{}) {
+func GetListofUsersWithRolesWithMicroservice(checkerRoles []string) (int, []map[string]interface{}) {
     cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(region))
     if err != nil {
         panic(err)
@@ -103,7 +116,7 @@ func GetListofUsersWithRoles(checkerRoles []string) (int, []map[string]interface
     return response.StatusCode, jsonObject
 }
 
-func UpdateMicroserviceById(lambdaFn string, apiRoute string, bodyJSON map[string]interface{}) (int, map[string]interface{}) {
+func UpdateWithMicroservice(lambdaFn string, apiRoute string, bodyJSON map[string]interface{}) (int, map[string]interface{}) {
     cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(region))
     if err != nil {
         panic(err)
@@ -137,15 +150,27 @@ func UpdateMicroserviceById(lambdaFn string, apiRoute string, bodyJSON map[strin
 
     var response models.Response
     
-    json.Unmarshal(res.Payload, &response)
+    reader := bytes.NewReader(res.Payload)
+    decode := json.NewDecoder(reader)
+    err = decode.Decode(&response)
+    if err != nil {
+        panic(err)
+    }
 
-    var responseBody map[string]interface{}
-    json.Unmarshal([]byte(response.Body), &responseBody)
+    if response.Body == "404 page not found"{
+        return http.StatusNotFound, map[string]interface{}{"data": response.Body}
+    }
 
-    return response.StatusCode, responseBody
+    var jsonObject map[string]interface{}
+    err = json.Unmarshal([]byte(response.Body), &jsonObject)
+    if err != nil {
+        panic(err)
+    }
+
+    return response.StatusCode, jsonObject
 }
 
-func CreateServiceWithMicroservice(lambdaFn string, apiRoute string, bodyJSON map[string]interface{}) (int, map[string]interface{}) {
+func CreateWithMicroservice(lambdaFn string, apiRoute string, bodyJSON map[string]interface{}) (int, map[string]interface{}) {
     cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(region))
     if err != nil {
         panic(err)
@@ -161,7 +186,7 @@ func CreateServiceWithMicroservice(lambdaFn string, apiRoute string, bodyJSON ma
 
     event := map[string]interface{}{
         "httpMethod": "POST",
-        "path": fmt.Sprintf("/api/v1/%v", apiRoute),
+        "path": fmt.Sprintf("/%v", apiRoute),
         "body": string(body),
     }
 
@@ -181,10 +206,71 @@ func CreateServiceWithMicroservice(lambdaFn string, apiRoute string, bodyJSON ma
 
     var response models.Response
     
-    json.Unmarshal(res.Payload, &response)
+    reader := bytes.NewReader(res.Payload)
+    decode := json.NewDecoder(reader)
+    err = decode.Decode(&response)
+    if err != nil {
+        panic(err)
+    }
 
-    var responseBody map[string]interface{}
-    json.Unmarshal([]byte(response.Body), &responseBody)
+    if response.Body == "404 page not found"{
+        return http.StatusNotFound, map[string]interface{}{"data": response.Body}
+    }
 
-    return response.StatusCode, responseBody
+    var jsonObject map[string]interface{}
+    err = json.Unmarshal([]byte(response.Body), &jsonObject)
+    if err != nil {
+        panic(err)
+    }
+
+    return response.StatusCode, jsonObject
+}
+
+func DeleteFromMicroserviceById(lambdaFn string, apiRoute string, id string) (int, map[string]interface{}) {
+    cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(region))
+    if err != nil {
+        panic(err)
+    }
+
+    client := lambda.NewFromConfig(cfg)
+
+    event := map[string]interface{}{
+        "httpMethod": "DELETE",
+        "path": fmt.Sprintf("/%v/%v", apiRoute, id),
+    }
+
+    eventJSON, err := json.Marshal(event)
+    if err != nil {
+        return 500, map[string]interface{}{"data": "Unable to Marshal data"}
+    }
+    
+    res, err := client.Invoke(context.TODO(), &lambda.InvokeInput{
+        FunctionName: aws.String(lambdaFn),
+        Payload: eventJSON,
+    })
+
+    if err != nil {
+        return 500, map[string]interface{}{"data": err.Error()}
+    }
+
+    var response models.Response
+    
+    reader := bytes.NewReader(res.Payload)
+    decode := json.NewDecoder(reader)
+    err = decode.Decode(&response)
+    if err != nil {
+        panic(err)
+    }
+
+    if response.Body == "404 page not found"{
+        return http.StatusNotFound, map[string]interface{}{"data": response.Body}
+    }
+
+    var jsonObject map[string]interface{}
+    err = json.Unmarshal([]byte(response.Body), &jsonObject)
+    if err != nil {
+        panic(err)
+    }
+
+    return response.StatusCode, jsonObject
 }

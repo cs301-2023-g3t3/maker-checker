@@ -50,7 +50,7 @@ func (t PermissionController) CreateMakercheckerPermission(c *gin.Context) {
     if err != nil {
         msg := "Failed to insert permission record."
         if mongo.IsDuplicateKeyError(err) {
-            msg = "Route already exists."
+            msg = "Endpoint already exists."
         }
         c.JSON(http.StatusBadRequest, models.HttpError{
             Code: http.StatusBadRequest,
