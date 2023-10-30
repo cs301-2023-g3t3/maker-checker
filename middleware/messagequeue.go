@@ -5,11 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/service/iam"
+	"github.com/aws/aws-sdk-go-v2/service/sts"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 )
 
@@ -31,57 +30,51 @@ func SendMsg(c context.Context, api SQSSendMessageAPI, input *sqs.SendMessageInp
 	return api.SendMessage(c, input)
 }
 
-func parseAccountIDFromARN(arn string) (string, error) {
-	// ARN format: arn:aws:iam::123456789012:user/username
-	// Extract account ID (digits between the last two colons)
-	arnParts := strings.Split(arn, ":")
-	if len(arnParts) < 5 {
-		return "", fmt.Errorf("Invalid ARN format")
-	}
-
-	return arnParts[4], nil
-}
-
 func getAccountID() (string, error) {
-	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion("ap-southeast-1"))
-	if err != nil {
-		return "", err
-	}
-
-	client := iam.NewFromConfig(cfg)
-
-	// Use the GetUser API to retrieve information about the current user
-	// This will include the user's ARN, which includes the account ID
-	userInfo, err := client.GetUser(context.TODO(), &iam.GetUserInput{})
-	if err != nil {
-		return "", err
-	}
-
-	// Parse the user's ARN to extract the account ID
-	accountID, err := parseAccountIDFromARN(*userInfo.User.Arn)
-	if err != nil {
-		return "", err
-	}
-
-	return accountID, nil
-}
-
-func TriggerMessageQueueToEmail(makerEmail string, checkerEmail string) {
     cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion("ap-southeast-1"))
     if err != nil {
-        panic("configuration error, " + err.Error())
+        return "", err
+    }
+
+    client := sts.NewFromConfig(cfg)
+
+    // Use the GetCallerIdentity API to retrieve information about the calling identity
+    resp, err := client.GetCallerIdentity(context.TODO(), &sts.GetCallerIdentityInput{})
+    if err != nil {
+        return "", err
+    }
+
+    return *resp.Account, nil
+}
+
+func TriggerMessageQueueToEmail(makerEmail string, checkerEmail string) string {
+   cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion("ap-southeast-1"))
+    if err != nil {
+        return "configuration error, " + err.Error()
     }
 
     client := sqs.NewFromConfig(cfg)
 
-    // Get URL of queue (if you need this, provide the queue name in an environment variable)
-
     accountId, err := getAccountID()
     if err != nil {
-        panic(err.Error())
+        return "Unable to identify user accountId: " + err.Error()
     }
 
-    queueURL := fmt.Sprintf("https://sqs.ap-southeast-1.amazonaws.com/%v/%v", accountId, os.Getenv("QUEUE_NAME"))
+    // Provide the queue name in an environment variable
+    queueName := os.Getenv("QUEUE_NAME")
+
+    // Use GetQueueUrl to retrieve the queue URL
+    gQInput := &sqs.GetQueueUrlInput{
+        QueueName: aws.String(queueName),
+        QueueOwnerAWSAccountId: aws.String(accountId),
+    }
+
+    result, err := GetQueueURL(context.TODO(), client, gQInput)
+    if err != nil {
+        return "Got an error getting the queue URL: " + err.Error()
+    }
+
+    queueURL := *result.QueueUrl
 
     data := map[string]interface{}{
         "makerEmail": makerEmail,
@@ -90,22 +83,21 @@ func TriggerMessageQueueToEmail(makerEmail string, checkerEmail string) {
 
     dataJSON, err := json.Marshal(data)
     if err != nil {
-        panic(err)
+        return err.Error()
     }
 
     sMInput := &sqs.SendMessageInput{
         DelaySeconds: 0,
         MessageGroupId: aws.String("makerchecker"),
         MessageBody: aws.String(string(dataJSON)),
-        QueueUrl:    aws.String(queueURL),
+        QueueUrl: aws.String(queueURL),
     }
 
     resp, err := SendMsg(context.TODO(), client, sMInput)
     if err != nil {
-        fmt.Println("Got an error sending the message:")
-        fmt.Println(err)
-        return
+        return "Got an error sending the message: " + err.Error()
     }
 
     fmt.Println("Sent message with ID: " + *resp.MessageId)
+    return ""
 }

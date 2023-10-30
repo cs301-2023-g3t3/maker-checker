@@ -193,7 +193,14 @@ func (t MakercheckerController) CreateMakerchecker (c *gin.Context) {
     makerchecker.Status = "pending" // add default Status: pending
     makerchecker.Id = primitive.NewObjectID().Hex() // add makercheckerId ObjectKey
 
-    // middleware.TriggerMessageQueueToEmail(makerchecker.MakerEmail, makerchecker.CheckerEmail)
+    res := middleware.TriggerMessageQueueToEmail(makerchecker.MakerEmail, makerchecker.CheckerEmail)
+    if res != "" {
+        c.JSON(http.StatusInternalServerError, models.HttpError{
+            Code: http.StatusInternalServerError,
+            Message: res,
+        })
+        return 
+    }
 
     _, err = collection.InsertOne(ctx, makerchecker)
 
