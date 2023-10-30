@@ -2,14 +2,11 @@ package makerchecker
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"makerchecker-api/controllers/permissions"
 	"makerchecker-api/middleware"
 	"makerchecker-api/models"
 	"makerchecker-api/utils"
 	"net/http"
-	"slices"
 	"strings"
 	"time"
 
@@ -17,39 +14,15 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func Validate(makerRole string, checkerRole string, endpoint string) (int, string, error, *models.Permission) {
-    permission, found, err := permission.FindPermissionByEndpoint(endpoint)
-    if !found {
-        msg := "Endpoint route does not allow makerchecker"
-        return http.StatusNotFound, msg, err, nil
-    }
-
-    if err != nil {
-        return http.StatusInternalServerError, err.Error(), err, nil
-    }
-
-    if validMakerRole := slices.Contains(permission.Maker, makerRole); !validMakerRole {
-        msg := "Maker does not have enough permission to do makerchecker"
-        return http.StatusForbidden, msg, errors.New("Invalid maker role"), nil
-    }
-
-    if validCheckerRole := slices.Contains(permission.Checker, checkerRole); checkerRole != "" && !validCheckerRole{
-        msg := "Checker does not have enough permission to do makerchecker"
-        return http.StatusForbidden, msg, errors.New("Checker maker role"), nil
-    }
-
-    return http.StatusOK, "Success", nil, &permission
-}
-
 func (t MakercheckerController) CheckMakerchecker (c *gin.Context) {
-    type ValidMakerchecker struct {
+    type ValidMaker struct {
         MakerRole       string                      `json:"makerRole" bson:"makerRole" validate:"required"`
         Endpoint        string                      `json:"endpoint" bson:"endpoint" validate:"required"`
     }
 
-    var validMakerchecker ValidMakerchecker
+    var validMaker ValidMaker
 
-    if err := c.BindJSON(&validMakerchecker); err != nil {
+    if err := c.BindJSON(&validMaker); err != nil {
         c.JSON(http.StatusBadRequest, models.HttpError{
             Code: http.StatusBadRequest,
             Message: "Error",
@@ -58,7 +31,7 @@ func (t MakercheckerController) CheckMakerchecker (c *gin.Context) {
         return
     }
 
-    if err := validate.Struct(validMakerchecker); err != nil {
+    if err := validate.Struct(validMaker); err != nil {
         c.JSON(http.StatusBadRequest, models.HttpError{
             Code: http.StatusBadRequest, 
             Message: "Invalid data to check for makerchecker",
@@ -67,9 +40,9 @@ func (t MakercheckerController) CheckMakerchecker (c *gin.Context) {
         return
     }
 
-    requestRoute := validMakerchecker.Endpoint
+    requestRoute := validMaker.Endpoint
 
-    statusCode, body, err, permission := Validate(validMakerchecker.MakerRole, "", requestRoute)
+    statusCode, body, err, permission := Validate(validMaker.MakerRole, "", requestRoute)
     if statusCode != http.StatusOK {
         c.JSON(statusCode, models.HttpError{
             Code: statusCode,
