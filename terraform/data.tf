@@ -18,6 +18,11 @@ data "aws_ssm_parameter" "mongo_host" {
   name = "mongo_host"
 }
 
+data "aws_ssm_parameter" "queue_name" {
+  name = "queue_name"
+}
+
+
 output "existing_role_arn" {
     value = data.aws_iam_role.existing_role.arn
 }

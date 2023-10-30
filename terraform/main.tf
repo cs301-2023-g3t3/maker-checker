@@ -30,6 +30,7 @@ resource "aws_lambda_function" "this" {
         MONGO_USERNAME=data.aws_ssm_parameter.mongo_user.value
         MONGO_PASSWORD=data.aws_ssm_parameter.mongo_password.value
         MONGO_HOST=data.aws_ssm_parameter.mongo_host.value
+        QUEUE_NAME=data.aws_ssm_parameter.queue_name.value
         ENV="lambda"
     }
   }
