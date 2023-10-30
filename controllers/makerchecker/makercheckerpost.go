@@ -2,6 +2,7 @@ package makerchecker
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"makerchecker-api/controllers/permissions"
 	"makerchecker-api/middleware"
@@ -15,6 +16,30 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
+
+func Validate(makerRole string, checkerRole string, endpoint string) (int, string, error, *models.Permission) {
+    permission, found, err := permission.FindPermissionByRoute(endpoint)
+    if !found {
+        msg := "Endpoint route does not allow makerchecker"
+        return http.StatusNotFound, msg, err, nil
+    }
+
+    if err != nil {
+        return http.StatusInternalServerError, err.Error(), err, nil
+    }
+
+    if validMakerRole := slices.Contains(permission.Maker, makerRole); !validMakerRole {
+        msg := "Maker does not have enough permission to do makerchecker"
+        return http.StatusForbidden, msg, errors.New("Invalid maker role"), nil
+    }
+
+    if validCheckerRole := slices.Contains(permission.Checker, checkerRole); !validCheckerRole {
+        msg := "Checker does not have enough permission to do makerchecker"
+        return http.StatusForbidden, msg, errors.New("Invalid checker role"), nil
+    }
+
+    return http.StatusOK, "Success", nil, &permission
+}
 
 func (t MakercheckerController) CheckMakerchecker (c *gin.Context) {
     type ValidMakerchecker struct {
@@ -44,33 +69,14 @@ func (t MakercheckerController) CheckMakerchecker (c *gin.Context) {
     }
 
     requestRoute := validMakerchecker.Endpoint
-    // Validate if a route for makerchecker exists
-    permission, found, err := permission.FindPermissionByRoute(requestRoute)
-    if !found {
-        c.JSON(http.StatusNotFound, models.HttpError{
-            Code: http.StatusNotFound,
-            Message: "Endpoint route does not allow makerchecker",
+
+    statusCode, body, err, permission := Validate(validMakerchecker.MakerRole, validMakerchecker.CheckerRole, requestRoute)
+    if statusCode != http.StatusOK {
+        c.JSON(statusCode, models.HttpError{
+            Code: statusCode,
+            Message: body,
             Data: map[string]interface{}{"data": err},
         })
-        return
-    }
-
-    if validMakerRole := slices.Contains(permission.Maker, validMakerchecker.MakerRole); !validMakerRole {
-        c.JSON(http.StatusForbidden, models.HttpError{
-            Code: http.StatusForbidden, 
-            Message: "Maker does not have enough permission to do makerchecker",
-            Data: map[string]interface{}{"data": "Invalid maker role"},
-        })
-        return
-    }
-
-    if validCheckerRole := slices.Contains(permission.Checker, validMakerchecker.CheckerRole); !validCheckerRole {
-        c.JSON(http.StatusForbidden, models.HttpError{
-            Code: http.StatusForbidden, 
-            Message: "Checker does not have enough permission to do makerchecker",
-            Data: map[string]interface{}{"data": "Invalid checker role"},
-        })
-        return
     }
 
     statusCode, responseBody := middleware.GetListofUsersWithRoles(permission.Checker) 
@@ -116,32 +122,13 @@ func (t MakercheckerController) CreateMakerchecker (c *gin.Context) {
 
     requestRoute := makerchecker.Endpoint
     // Validate if a route for makerchecker exists
-    permission, found, err := permission.FindPermissionByRoute(requestRoute)
-    if !found {
-        c.JSON(http.StatusNotFound, models.HttpError{
-            Code: http.StatusNotFound,
-            Message: "Endpoint route does not allow makerchecker",
+    statusCode, body, err, _ := Validate(makerchecker.MakerRole, makerchecker.CheckerRole, requestRoute)
+    if statusCode != http.StatusOK {
+        c.JSON(statusCode, models.HttpError{
+            Code: statusCode,
+            Message: body,
             Data: map[string]interface{}{"data": err},
         })
-        return
-    }
-
-    if validMakerRole := slices.Contains(permission.Maker, makerchecker.MakerRole); !validMakerRole {
-        c.JSON(http.StatusForbidden, models.HttpError{
-            Code: http.StatusForbidden, 
-            Message: "Maker does not have enough permission to do makerchecker",
-            Data: map[string]interface{}{"data": "Invalid maker role"},
-        })
-        return
-    }
-
-    if validCheckerRole := slices.Contains(permission.Checker, makerchecker.CheckerRole); !validCheckerRole {
-        c.JSON(http.StatusForbidden, models.HttpError{
-            Code: http.StatusForbidden, 
-            Message: "Checker does not have enough permission to do makerchecker",
-            Data: map[string]interface{}{"data": "Invalid checker role"},
-        })
-        return
     }
 
     // Get relevant Lambda Function and API Routes

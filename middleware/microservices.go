@@ -99,7 +99,6 @@ func GetListofUsersWithRoles(checkerRoles []string) (int, []map[string]interface
     if err != nil {
         panic(err)
     }
-    fmt.Printf("%T", jsonObject)
 
     return response.StatusCode, jsonObject
 }
