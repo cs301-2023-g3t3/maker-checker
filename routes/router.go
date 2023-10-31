@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	ginadapter "github.com/awslabs/aws-lambda-go-api-proxy/gin"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -27,6 +28,7 @@ func InitRoutes() {
     permission := new(permission.PermissionController)
     
     router := gin.Default()
+    router.Use(cors.Default())
 
     v1 := router.Group("/makerchecker")
 
