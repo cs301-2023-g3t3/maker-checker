@@ -32,6 +32,9 @@ func InitRoutes() {
 
     healthGroup := v1.Group("/health")
     healthGroup.GET("", health.CheckHealth)
+    
+    verifyGroup := v1.Group("/verify")
+    verifyGroup.POST("", makerchecker.CheckMakerchecker)
 
     makercheckerGroup := v1.Group("/record")
     makercheckerGroup.GET("", makerchecker.GetAllMakercheckers)
@@ -43,7 +46,6 @@ func InitRoutes() {
     // makercheckerGroup.GET("/maker/:userId/:status", makerchecker.GetByMakerId)
 
     makercheckerGroup.POST("", makerchecker.CreateMakerchecker)
-    makercheckerGroup.POST("/check", makerchecker.CheckMakerchecker)
     makercheckerGroup.PUT("/:id/:status", makerchecker.UpdateMakerchecker)
 
     permissionGroup := v1.Group("/permission") 
