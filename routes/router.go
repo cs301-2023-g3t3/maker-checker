@@ -28,6 +28,7 @@ func InitRoutes() {
     permission := new(permission.PermissionController)
     
     router := gin.Default()
+	router.Use(gin.Recovery())
     router.Use(cors.Default())
 
     v1 := router.Group("/makerchecker")
