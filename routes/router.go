@@ -43,11 +43,7 @@ func InitRoutes() {
     makercheckerGroup.GET("", makerchecker.GetAllMakercheckers)
     makercheckerGroup.GET("/:id", makerchecker.GetMakercheckerById)
     makercheckerGroup.GET("/user/:userId", makerchecker.GetRequestsByUserId)
-    // makercheckerGroup.GET("/checker/:userId", makerchecker.GetByCheckerId)
-    // makercheckerGroup.GET("/checker/:userId/:status", makerchecker.GetByCheckerId)
-    // makercheckerGroup.GET("/maker/:userId", makerchecker.GetByMakerId)
-    // makercheckerGroup.GET("/maker/:userId/:status", makerchecker.GetByMakerId)
-
+    makercheckerGroup.GET("/to-approve/:userId", makerchecker.GetPendingApprovalByUserId)
     makercheckerGroup.POST("", makerchecker.CreateMakerchecker)
     makercheckerGroup.PUT("/:id/:status", makerchecker.UpdateMakerchecker)
 
