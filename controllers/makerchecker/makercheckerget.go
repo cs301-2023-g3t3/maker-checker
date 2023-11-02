@@ -79,7 +79,7 @@ func (t MakercheckerController) GetMakercheckerById(c *gin.Context) {
 }
 
 func (t MakercheckerController) GetPendingApprovalByMakerId(c *gin.Context) {
-    makerId := c.Param("makerId")
+    makerId := c.Param("userId")
     if makerId == "" {
         c.JSON(http.StatusBadRequest, models.HttpError{
             Code: http.StatusBadRequest,
@@ -128,7 +128,7 @@ func (t MakercheckerController) GetPendingApprovalByMakerId(c *gin.Context) {
 }
 
 func (t MakercheckerController) GetPendingApprovalByCheckerId(c *gin.Context) {
-    checkerId := c.Param("checkerId")
+    checkerId := c.Param("userId")
     if checkerId == "" {
         c.JSON(http.StatusBadRequest, models.HttpError{
             Code: http.StatusBadRequest,

@@ -14,11 +14,98 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cognitoidentityprovider"
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
 	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/lestrrat-go/jwx/jws"
 )
+
+func VerifyUserInfo() gin.HandlerFunc{
+    return func (c *gin.Context) {
+        userId := c.Param("userId")
+        if userId == "" {
+            c.JSON(http.StatusBadRequest, models.HttpError{
+                Code: http.StatusBadRequest,
+                Message: "Id cannot be empty",
+            })
+            return
+        }
+
+		auth := c.Request.Header.Get("Authorization")
+		if auth == "" {
+			c.String(http.StatusForbidden, "No Authorization header provided")
+			c.Abort()
+			return
+		}
+
+		tokenString := strings.TrimPrefix(auth, "Bearer ")
+		if tokenString == auth {
+			c.String(http.StatusForbidden, "Could not find bearer token in Authorization header")
+			c.Abort()
+			return
+		}
+
+        // initialise new cognitoidentityprovider
+        sess, err := session.NewSession()
+        svc := cognitoidentityprovider.New(sess, aws.NewConfig().WithRegion("ap-southeast-1"))
+        
+        // Create a GetUserInput object and set the AccessToken field
+        input := &cognitoidentityprovider.GetUserInput{
+            AccessToken: &tokenString,
+        }
+
+
+        // Use the input to call GetUser
+        res, err := svc.GetUser(input)
+        if err != nil{
+            c.JSON(http.StatusInternalServerError, err)
+            c.Abort()
+            return
+        }
+
+        var email string
+        for _, attribute := range res.UserAttributes {
+            if *attribute.Name == "email" {
+            email = *attribute.Value
+            break  // Exit the loop after finding the email attribute
+        }
+}
+        
+        lambdaFn, apiRoute := utils.ProcessMicroserviceTypes("users")
+        statusCode, resObj := GetFromMicroserviceById(lambdaFn, apiRoute, userId)
+        if statusCode != 200 {
+            c.JSON(http.StatusUnauthorized, models.HttpError{
+                Code: http.StatusUnauthorized,
+                Message: "Unable to verify the User ID",
+                Data: map[string]interface{}{"data": err},
+            })
+            c.Abort()
+            return
+        }
+
+        resEmail, ok := resObj["email"].(string)
+        if !ok {
+            c.JSON(http.StatusUnauthorized, models.HttpError{
+                Code: http.StatusUnauthorized,
+                Message: "Unable to verify the User",
+                Data: map[string]interface{}{"data": err},
+            })
+            c.Abort()
+            return
+        }
+
+        if resEmail != email {
+            c.JSON(http.StatusUnauthorized, models.HttpError{
+                Code: http.StatusUnauthorized,
+                Message: "Unable to verify the User",
+            })
+            c.Abort()
+            return
+        }
+
+        c.Set("userDetails", resObj)
+        c.Next()
+    }
+}
 
 type ParsedUserClaim struct {
     Role        string 	`json:"role"`
@@ -98,99 +185,3 @@ func DecodeJWT() gin.HandlerFunc {
 	}
 }
 
-func VerifyUserInfo() gin.HandlerFunc{
-    return func (c *gin.Context) {
-
-        var body models.Makerchecker
-
-        if err := c.BindJSON(&body); err != nil {
-			c.String(http.StatusBadRequest, err.Error()) 
-            c.Abort()
-			return
-        }
-
-        if err := validator.New().Struct(body); err != nil {
-            c.String(http.StatusBadRequest, err.Error())
-            c.Abort()
-            return
-        }
-
-		auth := c.Request.Header.Get("Authorization")
-		if auth == "" {
-			c.String(http.StatusForbidden, "No Authorization header provided")
-			c.Abort()
-			return
-		}
-
-		tokenString := strings.TrimPrefix(auth, "Bearer ")
-		if tokenString == auth {
-			c.String(http.StatusForbidden, "Could not find bearer token in Authorization header")
-			c.Abort()
-			return
-		}
-
-        // initialise new cognitoidentityprovider
-        sess, err := session.NewSession()
-        svc := cognitoidentityprovider.New(sess, aws.NewConfig().WithRegion("ap-southeast-1"))
-        
-        // Create a GetUserInput object and set the AccessToken field
-        input := &cognitoidentityprovider.GetUserInput{
-            AccessToken: &tokenString,
-        }
-
-
-        // Use the input to call GetUser
-        res, err := svc.GetUser(input)
-        if err != nil{
-            c.JSON(http.StatusInternalServerError, err)
-            c.Abort()
-            return
-        }
-
-        var email string
-        for _, attribute := range res.UserAttributes {
-            if *attribute.Name == "email" {
-            email = *attribute.Value
-            break  // Exit the loop after finding the email attribute
-        }
-}
-        
-        lambdaFn, apiRoute := utils.ProcessMicroserviceTypes("users")
-        statusCode, resObj := GetFromMicroserviceById(lambdaFn, apiRoute, body.MakerId)
-        if statusCode != 200 {
-            c.JSON(http.StatusUnauthorized, models.HttpError{
-                Code: http.StatusUnauthorized,
-                Message: "Unable to verify the User ID",
-                Data: map[string]interface{}{"data": err},
-            })
-            c.Abort()
-            return
-        }
-
-        resEmail, ok := resObj["email"].(string)
-        if !ok {
-            c.JSON(http.StatusUnauthorized, models.HttpError{
-                Code: http.StatusUnauthorized,
-                Message: "Unable to verify the User",
-                Data: map[string]interface{}{"data": err},
-            })
-            c.Abort()
-            return
-        }
-
-        if resEmail != email {
-            c.JSON(http.StatusUnauthorized, models.HttpError{
-                Code: http.StatusUnauthorized,
-                Message: "Unable to verify the User",
-            })
-            c.Abort()
-            return
-        }
-
-        fmt.Printf("%T", c.Request.Body)
-
-        c.Set("userDetails", resObj)
-        c.Set("requestBody", body)
-        c.Next()
-    }
-}

@@ -39,15 +39,16 @@ func InitRoutes() {
     
     verifyGroup := v1.Group("/verify")
     verifyGroup.Use(middleware.VerifyUserInfo())
-    verifyGroup.POST("", makerchecker.CheckMakerchecker)
+    verifyGroup.POST("/:userId", makerchecker.CheckMakerchecker)
 
     makercheckerGroup := v1.Group("/record")
     makercheckerGroup.GET("", makerchecker.GetAllMakercheckers)
-    makercheckerGroup.GET("/:id", makerchecker.GetMakercheckerById)
-    makercheckerGroup.GET("/pending-approve/:makerId", makerchecker.GetPendingApprovalByMakerId)
-    makercheckerGroup.GET("/to-approve/:checkerId", makerchecker.GetPendingApprovalByCheckerId)
-    makercheckerGroup.POST("", middleware.VerifyUserInfo(), makerchecker.CreateMakerchecker)
-    makercheckerGroup.PUT("/:id/:status", makerchecker.UpdateMakerchecker)
+    makercheckerGroup.Use(middleware.VerifyUserInfo())
+    makercheckerGroup.GET("/:userId/:id/", makerchecker.GetMakercheckerById)
+    makercheckerGroup.GET("/:userId/pending-approve/", makerchecker.GetPendingApprovalByMakerId)
+    makercheckerGroup.GET("/:userId/to-approve/", makerchecker.GetPendingApprovalByCheckerId)
+    makercheckerGroup.POST("/:userId", makerchecker.CreateMakerchecker)
+    makercheckerGroup.PUT("/:userId", makerchecker.UpdateMakerchecker)
 
     permissionGroup := v1.Group("/permission") 
     permissionGroup.GET("", permission.GetAllPermission)

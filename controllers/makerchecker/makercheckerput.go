@@ -39,14 +39,35 @@ func RequestApproved(lambdaFn string, apiRoute string, data map[string]interface
 }
 
 func (t MakercheckerController) UpdateMakerchecker (c *gin.Context) {
-    id := c.Param("id")
-    status := c.Param("status")
-    if id == "" || status == "" {
+    type RequestBody struct {
+        Id      string      `json:"id" validate:"required"`
+        Status  string      `json:"status" validate:"required"`
+    }
+
+    userId := c.Param("userId") // userId here refers to the checkerId
+    if userId == "" {
         c.JSON(http.StatusBadRequest, models.HttpError{
             Code: http.StatusBadRequest,
-            Message: "Id and status cannot be empty",
-            Data: nil,
+            Message: "User ID cannot be empty",
         })
+        return
+    }
+
+    var requestBody RequestBody
+    if err := c.BindJSON(&requestBody); err != nil {
+        c.JSON(http.StatusBadRequest, models.HttpError{
+            Code: http.StatusBadRequest,
+            Message: err.Error(),
+        })
+        return
+    }
+
+    if err := validate.Struct(requestBody); err != nil {
+        c.JSON(http.StatusBadRequest, models.HttpError{
+            Code: http.StatusBadRequest,
+            Message: err.Error(),
+        })
+        return
     }
 
     ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -54,7 +75,7 @@ func (t MakercheckerController) UpdateMakerchecker (c *gin.Context) {
 
     var makerchecker models.Makerchecker
 
-    filter := bson.M{"_id": id}
+    filter := bson.M{"_id": requestBody.Id}
     err := collection.FindOne(ctx, filter).Decode(&makerchecker)
     if err != nil {
         msg := "Failed to retrieve makerchecker record"
@@ -65,6 +86,14 @@ func (t MakercheckerController) UpdateMakerchecker (c *gin.Context) {
             Code: http.StatusBadRequest,
             Message: msg,
             Data: map[string]interface{}{"data": err.Error()},
+        })
+        return
+    }
+
+    if makerchecker.CheckerId != userId {
+        c.JSON(http.StatusForbidden, models.HttpError{
+            Code: http.StatusForbidden,
+            Message: "User is not authorize to approve the request.",
         })
         return
     }
@@ -84,9 +113,9 @@ func (t MakercheckerController) UpdateMakerchecker (c *gin.Context) {
     var statusCode int
     var responseBody map[string]interface{}
 
-    if status == "cancelled"{
+    if requestBody.Status == "cancelled"{
         makerchecker.Status = "cancelled"
-    } else if status == "approved" {
+    } else if requestBody.Status == "approved" {
         statusCode, responseBody = RequestApproved(lambdaFn, apiRoute, makerchecker.Data, endpointParts[2])
         if statusCode != 200 && statusCode != 201 {
             msg := fmt.Sprint(responseBody)
