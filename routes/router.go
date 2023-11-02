@@ -44,9 +44,9 @@ func InitRoutes() {
     makercheckerGroup := v1.Group("/record")
     makercheckerGroup.GET("", makerchecker.GetAllMakercheckers)
     makercheckerGroup.Use(middleware.VerifyUserInfo())
-    makercheckerGroup.GET("/:userId/:id/", makerchecker.GetMakercheckerById)
-    makercheckerGroup.GET("/:userId/pending-approve/", makerchecker.GetPendingApprovalByMakerId)
-    makercheckerGroup.GET("/:userId/to-approve/", makerchecker.GetPendingApprovalByCheckerId)
+    makercheckerGroup.GET("/:userId/:id", makerchecker.GetMakercheckerById)
+    makercheckerGroup.GET("/pending-approve/:userId", makerchecker.GetPendingApprovalByMakerId)
+    makercheckerGroup.GET("/to-approve/:userId", makerchecker.GetPendingApprovalByCheckerId)
     makercheckerGroup.POST("/:userId", makerchecker.CreateMakerchecker)
     makercheckerGroup.PUT("/:userId", makerchecker.UpdateMakerchecker)
 
