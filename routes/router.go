@@ -5,6 +5,7 @@ import (
 	"makerchecker-api/controllers"
 	"makerchecker-api/controllers/makerchecker"
 	permission "makerchecker-api/controllers/permissions"
+	"makerchecker-api/middleware"
 	"os"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -37,14 +38,15 @@ func InitRoutes() {
     healthGroup.GET("", health.CheckHealth)
     
     verifyGroup := v1.Group("/verify")
+    verifyGroup.Use(middleware.VerifyUserInfo())
     verifyGroup.POST("", makerchecker.CheckMakerchecker)
 
     makercheckerGroup := v1.Group("/record")
     makercheckerGroup.GET("", makerchecker.GetAllMakercheckers)
     makercheckerGroup.GET("/:id", makerchecker.GetMakercheckerById)
-    makercheckerGroup.GET("/user/:userId", makerchecker.GetRequestsByUserId)
-    makercheckerGroup.GET("/to-approve/:userId", makerchecker.GetPendingApprovalByUserId)
-    makercheckerGroup.POST("", makerchecker.CreateMakerchecker)
+    makercheckerGroup.GET("/pending-approve/:makerId", makerchecker.GetPendingApprovalByMakerId)
+    makercheckerGroup.GET("/to-approve/:checkerId", makerchecker.GetPendingApprovalByCheckerId)
+    makercheckerGroup.POST("", middleware.VerifyUserInfo(), makerchecker.CreateMakerchecker)
     makercheckerGroup.PUT("/:id/:status", makerchecker.UpdateMakerchecker)
 
     permissionGroup := v1.Group("/permission") 

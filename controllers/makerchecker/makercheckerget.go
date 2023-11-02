@@ -78,87 +78,9 @@ func (t MakercheckerController) GetMakercheckerById(c *gin.Context) {
     c.JSON(http.StatusOK, makerchecker)
 }
 
-// Get both maker and checker requests using UserId
-func (t MakercheckerController) GetRequestsByUserId(c *gin.Context) {
-    userId := c.Param("userId")
-    if userId == "" {
-        c.JSON(http.StatusBadRequest, models.HttpError{
-            Code: http.StatusBadRequest,
-            Message: "userId cannot be empty",
-        })
-        return
-    }
-
-    ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-    defer cancel()
-
-    makerData := make(map[string]interface{})
-    checkerData := make(map[string]interface{})
-
-    makerFilter := bson.M{"makerId": userId}
-    makerCursor, err := collection.Find(ctx, makerFilter)
-    if err != nil {
-        panic(err)
-    }
-
-    checkerFilter := bson.M{"checkerId": userId}
-    checkerCursor, err := collection.Find(ctx, checkerFilter)
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, models.HttpError{
-            Code: http.StatusInternalServerError,
-            Message: err.Error(),
-        })
-        return
-    }
-
-    defer makerCursor.Close(ctx)
-    defer checkerCursor.Close(ctx)
-
-    // Iterate through makerCursor and populate makerData
-    for makerCursor.Next(ctx) {
-        var makerResult bson.M
-        if err := makerCursor.Decode(&makerResult); err != nil {
-            c.JSON(http.StatusInternalServerError, models.HttpError{
-                Code: http.StatusInternalServerError,
-                Message: err.Error(),
-            })
-            return
-        }
-        makerData[generateUniqueKey(makerResult)] = makerResult
-    }
-
-    // Iterate through checkerCursor and populate checkerData
-    for checkerCursor.Next(ctx) {
-        var checkerResult bson.M
-        if err := checkerCursor.Decode(&checkerResult); err != nil {
-            c.JSON(http.StatusInternalServerError, models.HttpError{
-                Code: http.StatusInternalServerError,
-                Message: err.Error(),
-            })
-            return
-        }
-        checkerData[generateUniqueKey(checkerResult)] = checkerResult
-    }
-
-    if len(makerData) == 0 && len(checkerData) == 0 {
-        c.JSON(http.StatusNotFound, models.HttpError{
-            Code: http.StatusNotFound,
-            Message: "No requests can be found with this userId",
-        })
-        return
-    }
-
-    res := map[string]interface{}{
-        "makerRequests": makerData,
-        "checkerRequests": checkerData,
-    }
-
-    c.JSON(http.StatusOK, res)
-}
-
-func (t MakercheckerController) GetPendingApprovalByUserId(c *gin.Context) {
-    userId := c.Param("userId")
-    if userId == "" {
+func (t MakercheckerController) GetPendingApprovalByMakerId(c *gin.Context) {
+    makerId := c.Param("makerId")
+    if makerId == "" {
         c.JSON(http.StatusBadRequest, models.HttpError{
             Code: http.StatusBadRequest,
             Message: "User Id cannot be empty.",
@@ -169,7 +91,56 @@ func (t MakercheckerController) GetPendingApprovalByUserId(c *gin.Context) {
     ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
     defer cancel()
 
-    filter := bson.M{"checkerId": userId, "status": "pending"}
+    filter := bson.M{"makerId": makerId, "status": "pending"}
+    cursor, err := collection.Find(ctx, filter)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, models.HttpError{
+            Code: http.StatusInternalServerError,
+            Message: "Unable to retrieve data",
+            Data: map[string]interface{}{"data": err.Error()},
+        })
+        return
+    }
+
+    defer cursor.Close(ctx)
+    var makerchecker []models.Makerchecker
+    err = cursor.All(ctx, &makerchecker)
+    if err != nil {
+        c.JSON(
+            http.StatusInternalServerError, models.HttpError{
+                Code: http.StatusInternalServerError, 
+                Message: "Failed to retrieve makerchecker requests",
+                Data: map[string]interface{}{"data": err.Error()},
+        })
+        return
+    }
+
+    if len(makerchecker) == 0 {
+        c.JSON(
+            http.StatusNotFound, models.HttpError{
+                Code: http.StatusNotFound, 
+                Message: "No pending requests found",
+        })
+        return
+    }
+
+    c.JSON(http.StatusOK, makerchecker)
+}
+
+func (t MakercheckerController) GetPendingApprovalByCheckerId(c *gin.Context) {
+    checkerId := c.Param("checkerId")
+    if checkerId == "" {
+        c.JSON(http.StatusBadRequest, models.HttpError{
+            Code: http.StatusBadRequest,
+            Message: "User Id cannot be empty.",
+        })
+        return
+    }
+
+    ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+    defer cancel()
+
+    filter := bson.M{"checkerId": checkerId, "status": "pending"}
     cursor, err := collection.Find(ctx, filter)
     if err != nil {
         c.JSON(http.StatusInternalServerError, models.HttpError{

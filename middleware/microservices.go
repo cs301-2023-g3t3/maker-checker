@@ -64,7 +64,7 @@ func GetFromMicroserviceById(lambdaFn string, apiRoute string, id string) (int, 
     return response.StatusCode, jsonObject
 }
 
-func GetListofUsersWithRolesWithMicroservice(checkerRoles []string) (int, any) {
+func GetListofUsersWithRolesWithMicroservice(checkerRoles []float64) (int, any) {
     cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(region))
     if err != nil {
         return http.StatusInternalServerError, err.Error()

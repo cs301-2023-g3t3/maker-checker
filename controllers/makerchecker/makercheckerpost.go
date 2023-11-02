@@ -15,23 +15,26 @@ import (
 )
 
 func (t MakercheckerController) CheckMakerchecker (c *gin.Context) {
-    type ValidMaker struct {
-        MakerRole       string                      `json:"makerRole" bson:"makerRole" validate:"required"`
-        Endpoint        string                      `json:"endpoint" bson:"endpoint" validate:"required"`
-    }
+    userDetails := GetUserDetails(c)
 
-    var validMaker ValidMaker
-
-    if err := c.BindJSON(&validMaker); err != nil {
-        c.JSON(http.StatusBadRequest, models.HttpError{
-            Code: http.StatusBadRequest,
+    var reqBody models.Makerchecker
+    getRequestBody, ok := c.Get("requestBody")
+    if !ok {
+        c.JSON(http.StatusInternalServerError, models.HttpError{
+            Code: http.StatusInternalServerError,
             Message: "Error",
-            Data: map[string]interface{}{"data": err.Error()},
         })
-        return
     }
 
-    if err := validate.Struct(validMaker); err != nil {
+    reqBody, ok = getRequestBody.(models.Makerchecker)
+    if !ok {
+        c.JSON(http.StatusInternalServerError, models.HttpError{
+            Code: http.StatusInternalServerError,
+            Message: "Error",
+        })
+    }
+
+    if err := validate.Struct(reqBody); err != nil {
         c.JSON(http.StatusBadRequest, models.HttpError{
             Code: http.StatusBadRequest, 
             Message: "Invalid data to check for makerchecker",
@@ -40,9 +43,18 @@ func (t MakercheckerController) CheckMakerchecker (c *gin.Context) {
         return
     }
 
-    requestRoute := validMaker.Endpoint
+    requestRoute := reqBody.Endpoint
 
-    statusCode, body, err, permission := Validate(validMaker.MakerRole, "", requestRoute)
+    userRole, ok := userDetails["role"].(float64)
+    if !ok {
+        c.JSON(http.StatusInternalServerError, models.HttpError{
+            Code: http.StatusInternalServerError,
+            Message: "Something went wrong.",
+        })
+        return
+    }
+
+    statusCode, body, err, permission := Validate(userRole, -1, requestRoute)
     if statusCode != http.StatusOK {
         c.JSON(statusCode, models.HttpError{
             Code: statusCode,
@@ -73,29 +85,62 @@ func (t MakercheckerController) CheckMakerchecker (c *gin.Context) {
 }
 
 func (t MakercheckerController) CreateMakerchecker (c *gin.Context) {
-    makerchecker := new(models.Makerchecker)
-    
-    if err := c.BindJSON(makerchecker); err != nil {
+    var reqBody models.Makerchecker
+    getRequestBody, ok := c.Get("requestBody")
+    if !ok {
+        c.JSON(http.StatusInternalServerError, models.HttpError{
+            Code: http.StatusInternalServerError,
+            Message: "Error",
+        })
+    }
+
+    reqBody, ok = getRequestBody.(models.Makerchecker)
+    if !ok {
+        c.JSON(http.StatusInternalServerError, models.HttpError{
+            Code: http.StatusInternalServerError,
+            Message: "Error",
+        })
+    }
+
+    if reqBody.CheckerId == "" || reqBody.Data == nil {
         c.JSON(http.StatusBadRequest, models.HttpError{
             Code: http.StatusBadRequest,
             Message: "Invalid Makerchecker object.",
-            Data: map[string]interface{}{"data": err.Error()},
         })
         return
     }
 
-    if err := validate.Struct(makerchecker); err != nil {
+    makerDetails := GetUserDetails(c)
+    makerRole, ok := makerDetails["role"].(float64)
+    if !ok {
+        c.JSON(http.StatusInternalServerError, models.HttpError{
+            Code: http.StatusInternalServerError,
+            Message: "Something went wrong. Unable to retrieve user's role",
+        })
+        return
+    }
+
+    lambdaFn, apiRoute := utils.ProcessMicroserviceTypes("users")
+    statusCode, checkerDetails := middleware.GetFromMicroserviceById(lambdaFn, apiRoute, reqBody.CheckerId)
+    if statusCode != 200 {
         c.JSON(http.StatusBadRequest, models.HttpError{
-            Code: http.StatusBadRequest, 
-            Message: "Invalid Makerchecker object.",
-            Data: map[string]interface{}{"data": err.Error()},
+            Code: http.StatusBadRequest,
+            Message: "Checker User ID is not verified.",
+        })
+        return
+    }
+    checkerRole, ok := checkerDetails["role"].(float64)
+    if !ok {
+        c.JSON(http.StatusInternalServerError, models.HttpError{
+            Code: http.StatusInternalServerError,
+            Message: "Something went wrong.",
         })
         return
     }
 
-    requestRoute := makerchecker.Endpoint
+    requestRoute := reqBody.Endpoint
     // Validate if a route for makerchecker exists
-    statusCode, body, err, _ := Validate(makerchecker.MakerRole, makerchecker.CheckerRole, requestRoute)
+    statusCode, body, err, _ := Validate(makerRole, checkerRole, requestRoute)
     if statusCode != http.StatusOK {
         c.JSON(statusCode, models.HttpError{
             Code: statusCode,
@@ -106,9 +151,8 @@ func (t MakercheckerController) CreateMakerchecker (c *gin.Context) {
     }
 
     // Get relevant Lambda Function and API Routes
-    endpointParts := strings.Split(makerchecker.Endpoint, "/")
-    lambdaFn, apiRoute := utils.ProcessMicroserviceTypes(endpointParts[3])
-    
+    endpointParts := strings.Split(reqBody.Endpoint, "/")
+    lambdaFn, apiRoute = utils.ProcessMicroserviceTypes(endpointParts[3])
     if lambdaFn == "Error" {
         c.JSON(http.StatusBadRequest, models.HttpError{
             Code: http.StatusBadRequest, 
@@ -120,7 +164,7 @@ func (t MakercheckerController) CreateMakerchecker (c *gin.Context) {
 
     switch endpointParts[2] {
     case "PUT": case "DELETE":
-        if _, found := makerchecker.Data["id"]; !found {
+        if _, found := reqBody.Data["id"]; !found {
             c.JSON(http.StatusBadRequest, models.HttpError{
                 Code: http.StatusBadRequest,
                 Message: "Data ID cannot be empty",
@@ -128,7 +172,7 @@ func (t MakercheckerController) CreateMakerchecker (c *gin.Context) {
             })
             return
         }
-        dataId := fmt.Sprint(makerchecker.Data["id"])
+        dataId := fmt.Sprint(reqBody.Data["id"])
 
         // Check if data exists in relevant database
         statusCode, responseBody := middleware.GetFromMicroserviceById(lambdaFn, apiRoute, dataId) 
@@ -163,10 +207,17 @@ func (t MakercheckerController) CreateMakerchecker (c *gin.Context) {
     ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
     defer cancel()
 
-    makerchecker.Status = "pending" // add default Status: pending
-    makerchecker.Id = primitive.NewObjectID().Hex() // add makercheckerId ObjectKey
+    makerEmail, ok := makerDetails["email"].(string)
+    if !ok {
+        c.JSON(http.StatusInternalServerError, models.HttpError{
+            Code: http.StatusInternalServerError,
+            Message: "Something went wrong.",
+        })
+        return
+    }
 
-    res := middleware.TriggerMessageQueueToEmail(makerchecker.MakerEmail, makerchecker.CheckerEmail)
+    checkerEmail, ok := checkerDetails["email"].(string)
+    res := middleware.TriggerMessageQueueToEmail(makerEmail, checkerEmail)
     if res != "" {
         c.JSON(http.StatusInternalServerError, models.HttpError{
             Code: http.StatusInternalServerError,
@@ -175,7 +226,12 @@ func (t MakercheckerController) CreateMakerchecker (c *gin.Context) {
         return 
     }
 
-    _, err = collection.InsertOne(ctx, makerchecker)
+    reqBody.Id = primitive.NewObjectID().Hex() // add makercheckerId ObjectKey
+    reqBody.Status = "pending" // add default Status: pending
+    reqBody.MakerEmail = makerEmail
+    reqBody.CheckerEmail = checkerEmail
+
+    _, err = collection.InsertOne(ctx, reqBody)
 
     if err != nil {
         c.JSON(http.StatusBadRequest, models.HttpError{
@@ -186,5 +242,5 @@ func (t MakercheckerController) CreateMakerchecker (c *gin.Context) {
         return
     }
 
-    c.JSON(http.StatusCreated, map[string]interface{}{"result": makerchecker})
+    c.JSON(http.StatusCreated, map[string]interface{}{"result": reqBody})
 }
