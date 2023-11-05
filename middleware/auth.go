@@ -184,4 +184,3 @@ func DecodeJWT() gin.HandlerFunc {
         c.Next()
 	}
 }
-

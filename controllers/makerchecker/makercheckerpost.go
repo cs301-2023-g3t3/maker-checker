@@ -27,6 +27,7 @@ func (t MakercheckerController) CheckMakerchecker (c *gin.Context) {
             Code: http.StatusBadRequest,
             Message: err.Error(),
         })
+        return
     }
 
     if err := validate.Struct(requestBody); err != nil {
@@ -34,6 +35,7 @@ func (t MakercheckerController) CheckMakerchecker (c *gin.Context) {
             Code: http.StatusBadRequest,
             Message: err.Error(),
         })
+        return
     }
 
     requestRoute := requestBody.Endpoint
