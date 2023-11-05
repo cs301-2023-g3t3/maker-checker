@@ -6,6 +6,7 @@ import (
 )
 
 func init() {
+	configs.ConnectToRedis()
 	configs.EnvMongoUri()
 }
 
