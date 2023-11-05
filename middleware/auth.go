@@ -4,11 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"makerchecker-api/configs"
 	"makerchecker-api/models"
 	"makerchecker-api/utils"
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -30,6 +32,27 @@ func VerifyUserInfo() gin.HandlerFunc{
             return
         }
 
+        cachedData, err := configs.RedisClient.Get(userId).Result()
+        if err == nil {
+            // Data found in cache, return it
+            // You may need to deserialize the data based on your use case
+            // Example: You can use JSON unmarshaling if the data is in JSON format
+            var resObj map[string]interface{}
+            if err := json.Unmarshal([]byte(cachedData), &resObj); err != nil {
+                c.JSON(http.StatusInternalServerError, models.HttpError{
+                    Code:    http.StatusInternalServerError,
+                    Message: "Error parsing cached data",
+                })
+                c.Abort()
+                return
+            }
+
+            // Set the user details in the Gin context
+            c.Set("userDetails", resObj)
+            c.Next()
+            return
+        }
+
 		auth := c.Request.Header.Get("Authorization")
 		if auth == "" {
 			c.String(http.StatusForbidden, "No Authorization header provided")
@@ -44,8 +67,17 @@ func VerifyUserInfo() gin.HandlerFunc{
 			return
 		}
 
+
         // initialise new cognitoidentityprovider
         sess, err := session.NewSession()
+        if err != nil {
+            c.JSON(http.StatusInternalServerError, models.HttpError{
+                Code:    http.StatusInternalServerError,
+                Message: "Error creating AWS session",
+            })
+            c.Abort()
+            return
+        }
         svc := cognitoidentityprovider.New(sess, aws.NewConfig().WithRegion("ap-southeast-1"))
         
         // Create a GetUserInput object and set the AccessToken field
@@ -100,6 +132,14 @@ func VerifyUserInfo() gin.HandlerFunc{
             })
             c.Abort()
             return
+        }
+
+        dataToCache, err := json.Marshal(resObj)
+        if err == nil {
+            err := configs.RedisClient.Set(userId, dataToCache, time.Hour).Err()
+            if err != nil {
+                fmt.Printf("Error setting cache: %v\n", err)
+            }
         }
 
         c.Set("userDetails", resObj)
