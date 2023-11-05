@@ -20,10 +20,10 @@ resource "aws_lambda_function" "this" {
   source_code_hash = filebase64sha256("./main.zip")
   timeout          = 10
 
-  # vpc_config {
-  #   subnet_ids = ["subnet-0fe559864bcf3de70", "subnet-01a4cfeeb80346379", "subnet-0b581c9020e4d955a"]
-  #   security_group_ids = ["sg-05a445100fc469383"]
-  # }
+  vpc_config {
+    subnet_ids = ["subnet-067ead2dfed1c40f8"]
+    security_group_ids = ["sg-05a445100fc469383"]
+  }
 
   environment {
     variables = {
@@ -31,7 +31,7 @@ resource "aws_lambda_function" "this" {
         MONGO_PASSWORD=data.aws_ssm_parameter.mongo_password.value
         MONGO_HOST=data.aws_ssm_parameter.mongo_host.value
         QUEUE_NAME=data.aws_ssm_parameter.queue_name.value
-        REDIS_HOST="itsa-cluster-0001-001.erva1y.0001.apse1.cache.amazonaws.com:6379"
+        REDIS_HOST=data.aws_ssm_parameter.redis_host.value
         ENV="lambda"
     }
   }

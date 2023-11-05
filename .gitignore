@@ -21,3 +21,4 @@ api
 terraform/.terraform**
 terraform/*.zip
 main
+dump.rdb
