@@ -1,6 +1,7 @@
 package configs
 
 import (
+	"context"
 	"crypto/tls"
 	"log"
 	"os"
@@ -34,11 +35,11 @@ func ConnectToRedis() {
 		RouteByLatency: false,
 	})
 
-	_, err := RedisClient.Ping().Result()
+	ctx := context.Background()
+	err := RedisClient.ForEachShard(ctx, func(ctx context.Context, shard *redis.Client) error {
+		return shard.Ping(ctx).Err()
+	})
 	if err != nil {
-		log.Println(err)
-		log.Fatal("Failed to connect to Redis Cache")
-	} else {
-		log.Println("Connected to Redis Cache")
+		panic(err)
 	}
 }
