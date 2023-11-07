@@ -27,7 +27,7 @@ func ConnectToRedis() {
 	// 	DB:       0,
 	// })
 	RedisClient = redis.NewClusterClient(&redis.ClusterOptions{
-		Addrs:          []string{addr},
+		Addrs:          []string{"main-cluster-0001-001.main-cluster.erva1y.apse1.cache.amazonaws.com:6379", "main-cluster-0001-002.main-cluster.erva1y.apse1.cache.amazonaws.com:6379"},
 		TLSConfig:      &tls.Config{},
 		ReadOnly:       false,
 		RouteRandomly:  false,
