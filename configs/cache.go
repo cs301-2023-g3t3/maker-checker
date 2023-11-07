@@ -8,7 +8,7 @@ import (
 	"github.com/go-redis/redis"
 )
 
-var RedisClient *redis.Client
+var RedisClient *redis.ClusterClient
 
 func ConnectToRedis() {
 	var addr string
@@ -18,14 +18,22 @@ func ConnectToRedis() {
 		addr = os.Getenv("REDIS_HOST")
 		log.Println(addr)
 	}
-	RedisClient = redis.NewClient(&redis.Options{
-		TLSConfig: &tls.Config{
-			MinVersion: tls.VersionTLS12,
-		},
-		Addr:     addr,
-		Password: "",
-		DB:       0,
+	// RedisClient = redis.NewClient(&redis.Options{
+	// 	TLSConfig: &tls.Config{
+	// 		MinVersion: tls.VersionTLS12,
+	// 	},
+	// 	Addr:     addr,
+	// 	Password: "",
+	// 	DB:       0,
+	// })
+	RedisClient = redis.NewClusterClient(&redis.ClusterOptions{
+		Addrs:          []string{addr},
+		TLSConfig:      &tls.Config{},
+		ReadOnly:       false,
+		RouteRandomly:  false,
+		RouteByLatency: false,
 	})
+
 	_, err := RedisClient.Ping().Result()
 	if err != nil {
 		log.Println(err)
