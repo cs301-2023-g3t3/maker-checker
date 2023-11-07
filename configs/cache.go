@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/go-redis/redis"
+	"github.com/redis/go-redis/v9"
 )
 
 var RedisClient *redis.ClusterClient
