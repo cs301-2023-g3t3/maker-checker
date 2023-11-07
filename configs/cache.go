@@ -3,7 +3,6 @@ package configs
 import (
 	"context"
 	"crypto/tls"
-	"log"
 	"os"
 
 	"github.com/redis/go-redis/v9"
@@ -12,12 +11,12 @@ import (
 var RedisClient *redis.ClusterClient
 
 func ConnectToRedis() {
-	var addr string
-	if os.Getenv("ENV") != "lambda" {
-		addr = "redis:6379"
+	var node1, node2 string
+	if os.Getenv("ENV") != "lambda" {	
+		node1 = "redis:6379"
 	} else {
-		addr = os.Getenv("REDIS_HOST")
-		log.Println(addr)
+		node1 = os.Getenv("REDIS_NODE_1")
+		node2 = os.Getenv("REDIS_NODE_2")
 	}
 	// RedisClient = redis.NewClient(&redis.Options{
 	// 	TLSConfig: &tls.Config{
@@ -27,8 +26,9 @@ func ConnectToRedis() {
 	// 	Password: "",
 	// 	DB:       0,
 	// })
+
 	RedisClient = redis.NewClusterClient(&redis.ClusterOptions{
-		Addrs:          []string{"main-cluster-0001-001.main-cluster.erva1y.apse1.cache.amazonaws.com:6379", "main-cluster-0001-002.main-cluster.erva1y.apse1.cache.amazonaws.com:6379"},
+		Addrs:          []string{node1, node2},
 		TLSConfig:      &tls.Config{},
 		ReadOnly:       false,
 		RouteRandomly:  false,

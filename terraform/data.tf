@@ -22,8 +22,12 @@ data "aws_ssm_parameter" "queue_name" {
   name = "queue_name"
 }
 
-data "aws_ssm_parameter" "redis_host" {
-  name = "redis_host"
+data "aws_ssm_parameter" "redis_node_1" {
+  name = "redis_node_1"
+}
+
+data "aws_ssm_parameter" "redis_node_2" {
+  name = "redis_node_2"
 }
 
 output "existing_role_arn" {
