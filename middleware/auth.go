@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -32,7 +33,7 @@ func VerifyUserInfo() gin.HandlerFunc{
             return
         }
 
-        cachedData, err := configs.RedisClient.Get(userId).Result()
+        cachedData, err := configs.RedisClient.Get(context.Background(),userId).Result()
         if err == nil {
             // Data found in cache, return it
             // You may need to deserialize the data based on your use case
@@ -136,7 +137,7 @@ func VerifyUserInfo() gin.HandlerFunc{
 
         dataToCache, err := json.Marshal(resObj)
         if err == nil {
-            err := configs.RedisClient.Set(userId, dataToCache, time.Hour).Err()
+            err := configs.RedisClient.Set(context.Background(), userId, dataToCache, time.Hour).Err()
             if err != nil {
                 fmt.Printf("Error setting cache: %v\n", err)
             }
