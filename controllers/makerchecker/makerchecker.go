@@ -2,11 +2,12 @@ package makerchecker
 
 import (
 	"errors"
+	"makerchecker-api/configs"
+	"makerchecker-api/controllers/permissions"
+	"makerchecker-api/models"
 	"net/http"
 	"slices"
-	"makerchecker-api/controllers/permissions"
-	"makerchecker-api/configs"
-	"makerchecker-api/models"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -43,13 +44,21 @@ func Validate(makerRole float64, checkerRole float64, endpoint string) (int, str
     return http.StatusOK, "Success", nil, &permission
 }
 
-func GetUserDetails(c *gin.Context) map[string]interface{} {
+type FormattedUserDetails struct {
+    Email   string  `json:"email"`
+    Id      string  `json:"id"`
+    Role    float64 `json:"role"`
+}
+
+func GetUserDetails(c *gin.Context) *FormattedUserDetails {
     userDetails, ok := c.Get("userDetails")
     if !ok {
         c.JSON(http.StatusInternalServerError, models.HttpError{
             Code: http.StatusInternalServerError,
             Message: "Error",
         })
+        c.Abort()
+        return nil
     }
 
     userDetailsObj, ok := userDetails.(map[string]interface{})
@@ -57,8 +66,46 @@ func GetUserDetails(c *gin.Context) map[string]interface{} {
         c.JSON(http.StatusInternalServerError, models.HttpError{
             Code: http.StatusInternalServerError,
             Message: "Error",
-        })
+        }) 
+        c.Abort()
+        return nil
     }
 
-    return userDetailsObj
+
+    formatUserObj := new(FormattedUserDetails)
+
+    for k, v := range userDetailsObj {
+        switch k {
+        case "email":
+            formatUserObj.Email = v.(string)
+            break
+        case "user_id":
+            formatUserObj.Id = v.(string)
+            break
+        case "cognito:groups":
+            temp, ok := v.([]interface{})
+            if !ok {
+                c.JSON(http.StatusInternalServerError, models.HttpError{
+                    Code: http.StatusInternalServerError,
+                    Message: "Unable to retrieve role from Cognito:Groups",
+                })
+                c.Abort()
+                return nil
+            }
+
+            val, err := strconv.ParseFloat(temp[0].(string), 64)
+            if err != nil {
+                c.JSON(http.StatusInternalServerError, models.HttpError{
+                    Code: http.StatusInternalServerError,
+                    Message: "Error",
+                })
+                c.Abort()
+                return nil
+            }
+            formatUserObj.Role = val
+            break
+        }
+    }
+
+    return formatUserObj
 }

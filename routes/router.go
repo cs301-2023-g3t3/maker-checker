@@ -30,7 +30,11 @@ func InitRoutes() {
     
     router := gin.Default()
 	router.Use(gin.Recovery())
-    router.Use(cors.Default())
+
+	config := cors.DefaultConfig()
+    config.AddAllowHeaders("Authorization", "X-IDTOKEN")
+	config.AllowAllOrigins = true
+	router.Use(cors.New(config))
 
     v1 := router.Group("/makerchecker")
 
@@ -38,17 +42,17 @@ func InitRoutes() {
     healthGroup.GET("", health.CheckHealth)
     
     verifyGroup := v1.Group("/verify")
-    verifyGroup.Use(middleware.VerifyUserInfo())
-    verifyGroup.POST("/:userId", makerchecker.CheckMakerchecker)
+    verifyGroup.Use(middleware.DecodeJWT())
+    verifyGroup.POST("", makerchecker.CheckMakerchecker)
 
     makercheckerGroup := v1.Group("/record")
     makercheckerGroup.GET("", makerchecker.GetAllMakercheckers)
-    makercheckerGroup.Use(middleware.VerifyUserInfo())
-    makercheckerGroup.GET("/:userId/:id", makerchecker.GetMakercheckerById)
-    makercheckerGroup.GET("/pending-approve/:userId", makerchecker.GetPendingApprovalByMakerId)
-    makercheckerGroup.GET("/to-approve/:userId", makerchecker.GetPendingApprovalByCheckerId)
-    makercheckerGroup.POST("/:userId", makerchecker.CreateMakerchecker)
-    makercheckerGroup.PUT("/:userId", makerchecker.UpdateMakerchecker)
+    makercheckerGroup.Use(middleware.DecodeJWT())
+    makercheckerGroup.GET("/:id", makerchecker.GetMakercheckerById)
+    makercheckerGroup.GET("/pending-approve", makerchecker.GetPendingApprovalByMakerId)
+    makercheckerGroup.GET("/to-approve", makerchecker.GetPendingApprovalByCheckerId)
+    makercheckerGroup.POST("", makerchecker.CreateMakerchecker)
+    makercheckerGroup.PUT("", makerchecker.UpdateMakerchecker)
 
     permissionGroup := v1.Group("/permission") 
     permissionGroup.GET("", permission.GetAllPermission)

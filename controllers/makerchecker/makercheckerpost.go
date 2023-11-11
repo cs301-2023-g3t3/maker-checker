@@ -40,14 +40,7 @@ func (t MakercheckerController) CheckMakerchecker (c *gin.Context) {
 
     requestRoute := requestBody.Endpoint
 
-    userRole, ok := userDetails["role"].(float64)
-    if !ok {
-        c.JSON(http.StatusInternalServerError, models.HttpError{
-            Code: http.StatusInternalServerError,
-            Message: "Something went wrong.",
-        })
-        return
-    }
+    userRole := userDetails.Role
 
     statusCode, body, err, permission := Validate(userRole, -1, requestRoute)
     if statusCode != http.StatusOK {
@@ -98,14 +91,7 @@ func (t MakercheckerController) CreateMakerchecker (c *gin.Context) {
     }
 
     makerDetails := GetUserDetails(c)
-    makerRole, ok := makerDetails["role"].(float64)
-    if !ok {
-        c.JSON(http.StatusInternalServerError, models.HttpError{
-            Code: http.StatusInternalServerError,
-            Message: "Something went wrong. Unable to retrieve user's role",
-        })
-        return
-    }
+    makerRole := makerDetails.Role
 
     // Get checker details
     lambdaFn, apiRoute := utils.ProcessMicroserviceTypes("users")
@@ -195,14 +181,7 @@ func (t MakercheckerController) CreateMakerchecker (c *gin.Context) {
     ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
     defer cancel()
 
-    makerEmail, ok := makerDetails["email"].(string)
-    if !ok {
-        c.JSON(http.StatusInternalServerError, models.HttpError{
-            Code: http.StatusInternalServerError,
-            Message: "Something went wrong.",
-        })
-        return
-    }
+    makerEmail := makerDetails.Email
 
     checkerEmail, ok := checkerDetails["email"].(string)
     res := middleware.TriggerMessageQueueToEmail(makerEmail, checkerEmail)
@@ -214,14 +193,7 @@ func (t MakercheckerController) CreateMakerchecker (c *gin.Context) {
         return 
     }
 
-    makerId, ok := makerDetails["id"].(string)
-    if !ok {
-        c.JSON(http.StatusInternalServerError, models.HttpError{
-            Code: http.StatusInternalServerError,
-            Message: "Something went wrong.",
-        })
-        return
-    }
+    makerId := makerDetails.Id
 
     reqBody.Id = primitive.NewObjectID().Hex() // add makercheckerId ObjectKey
     reqBody.Status = "pending" // add default Status: pending

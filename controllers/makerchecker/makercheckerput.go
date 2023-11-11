@@ -29,7 +29,6 @@ func RequestApproved(lambdaFn string, apiRoute string, data map[string]interface
         break
     case "DELETE":
         statusCode, responseBody = middleware.DeleteFromMicroserviceById(lambdaFn, apiRoute, fmt.Sprint(data["id"]))
-        fmt.Println(responseBody)
         break
     default:
         return http.StatusBadRequest, map[string]interface{}{"data": "Action must be either 'POST', 'PUT', or 'DELETE' only"}
@@ -42,15 +41,6 @@ func (t MakercheckerController) UpdateMakerchecker (c *gin.Context) {
     type RequestBody struct {
         Id      string      `json:"id" validate:"required"`
         Status  string      `json:"status" validate:"required"`
-    }
-
-    userId := c.Param("userId") // userId here refers to the checkerId
-    if userId == "" {
-        c.JSON(http.StatusBadRequest, models.HttpError{
-            Code: http.StatusBadRequest,
-            Message: "User ID cannot be empty",
-        })
-        return
     }
 
     var requestBody RequestBody
@@ -69,6 +59,8 @@ func (t MakercheckerController) UpdateMakerchecker (c *gin.Context) {
         })
         return
     }
+
+    checkerDetails := GetUserDetails(c)
 
     ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
     defer cancel()
@@ -90,7 +82,7 @@ func (t MakercheckerController) UpdateMakerchecker (c *gin.Context) {
         return
     }
 
-    if makerchecker.CheckerId != userId {
+    if makerchecker.CheckerId != checkerDetails.Id {
         c.JSON(http.StatusForbidden, models.HttpError{
             Code: http.StatusForbidden,
             Message: "User is not authorize to approve the request.",
@@ -121,12 +113,12 @@ func (t MakercheckerController) UpdateMakerchecker (c *gin.Context) {
             msg := fmt.Sprint(responseBody)
             if statusCode == 0 {
                 statusCode = 500
-                msg = "Error retrieving data from the microservices."
+                msg = "Error making request to microservices"
             }
 
             c.JSON(statusCode, models.HttpError{
                 Code: statusCode,
-                Message: "Error",
+                Message: "Error making request to microservices",
                 Data: map[string]interface{}{"data": msg},
             })
             return

@@ -1,17 +1,17 @@
 package middleware
 
 import (
-	"context"
+	// "context"
 	"encoding/json"
 	"fmt"
 	"log"
-	"makerchecker-api/configs"
+	// "makerchecker-api/configs"
 	"makerchecker-api/models"
 	"makerchecker-api/utils"
 	"net/http"
 	"os"
 	"strings"
-	"time"
+	// "time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -33,26 +33,26 @@ func VerifyUserInfo() gin.HandlerFunc{
             return
         }
 
-        cachedData, err := configs.RedisClient.Get(context.Background(),userId).Result()
-        if err == nil {
-            // Data found in cache, return it
-            // You may need to deserialize the data based on your use case
-            // Example: You can use JSON unmarshaling if the data is in JSON format
-            var resObj map[string]interface{}
-            if err := json.Unmarshal([]byte(cachedData), &resObj); err != nil {
-                c.JSON(http.StatusInternalServerError, models.HttpError{
-                    Code:    http.StatusInternalServerError,
-                    Message: "Error parsing cached data",
-                })
-                c.Abort()
-                return
-            }
-
-            // Set the user details in the Gin context
-            c.Set("userDetails", resObj)
-            c.Next()
-            return
-        }
+       //  cachedData, err := configs.RedisClient.Get(context.Background(),userId).Result()
+       //  if err == nil {
+       //      // Data found in cache, return it
+       //      // You may need to deserialize the data based on your use case
+       //      // Example: You can use JSON unmarshaling if the data is in JSON format
+       //      var resObj map[string]interface{}
+       //      if err := json.Unmarshal([]byte(cachedData), &resObj); err != nil {
+       //          c.JSON(http.StatusInternalServerError, models.HttpError{
+       //              Code:    http.StatusInternalServerError,
+       //              Message: "Error parsing cached data",
+       //          })
+       //          c.Abort()
+       //          return
+       //      }
+       //
+       //      // Set the user details in the Gin context
+       //      c.Set("userDetails", resObj)
+       //      c.Next()
+       //      return
+       // }
 
 		auth := c.Request.Header.Get("Authorization")
 		if auth == "" {
@@ -135,13 +135,13 @@ func VerifyUserInfo() gin.HandlerFunc{
             return
         }
 
-        dataToCache, err := json.Marshal(resObj)
-        if err == nil {
-            err := configs.RedisClient.Set(context.Background(), userId, dataToCache, time.Hour).Err()
-            if err != nil {
-                fmt.Printf("Error setting cache: %v\n", err)
-            }
-        }
+        // dataToCache, err := json.Marshal(resObj)
+        // if err == nil {
+        //     err := configs.RedisClient.Set(context.Background(), userId, dataToCache, time.Hour).Err()
+        //     if err != nil {
+        //         fmt.Printf("Error setting cache: %v\n", err)
+        //     }
+        // }
 
         c.Set("userDetails", resObj)
         c.Next()
@@ -149,25 +149,26 @@ func VerifyUserInfo() gin.HandlerFunc{
 }
 
 type ParsedUserClaim struct {
-    Role        string 	`json:"role"`
+    UserId      string  `json:"user_id"`
     Email       string  `json:"email"`
+    Group       []string  `json:"cognito:groups"`
 }
 
 func DecodeJWT() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		auth := c.Request.Header.Get("Authorization")
+		auth := c.Request.Header.Get("X-IDTOKEN")
 		if auth == "" {
 			c.String(http.StatusForbidden, "No Authorization header provided")
 			c.Abort()
 			return
 		}
-
-		tokenString := strings.TrimPrefix(auth, "Bearer ")
-		if tokenString == auth {
-			c.String(http.StatusForbidden, "Could not find bearer token in Authorization header")
-			c.Abort()
-			return
-		}
+		//
+		// tokenString := strings.TrimPrefix(auth, "Bearer ")
+		// if tokenString == auth {
+		// 	c.String(http.StatusForbidden, "Could not find bearer token in Authorization header")
+		// 	c.Abort()
+		// 	return
+		// }
 		var keysJWK = os.Getenv("JWT_SECRET")
 		setOfKeys, err := jwk.ParseString(keysJWK)
 		if err != nil {
@@ -177,7 +178,7 @@ func DecodeJWT() gin.HandlerFunc {
 		}
 
         // change this for id_token or access_token
-		privKey, success := setOfKeys.Get(1)
+		privKey, success := setOfKeys.Get(0)
 		if !success {
 			c.String(http.StatusInternalServerError, "Could not find key at given index")
 			c.Abort()
@@ -191,7 +192,7 @@ func DecodeJWT() gin.HandlerFunc {
 			return
 		}
   
-		verifiedToken, err := jws.Verify([]byte(tokenString), jwa.RS256, pubkey)
+		verifiedToken, err := jws.Verify([]byte(auth), jwa.RS256, pubkey)
 		if err != nil {
 			c.String(http.StatusForbidden, fmt.Sprintf("Failed to verify token from HTTP request: %s", err.Error()))
 			c.Abort()
