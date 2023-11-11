@@ -79,13 +79,12 @@ func (t MakercheckerController) GetMakercheckerById(c *gin.Context) {
 }
 
 func (t MakercheckerController) GetPendingApprovalByMakerId(c *gin.Context) {
-    makerId := c.Param("userId")
+    makerId := GetUserDetails(c).Id
     if makerId == "" {
         c.JSON(http.StatusBadRequest, models.HttpError{
             Code: http.StatusBadRequest,
-            Message: "User Id cannot be empty.",
+            Message: "Maker Id cannot be found in the header provided",
         })
-        return
     }
 
     ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -128,13 +127,12 @@ func (t MakercheckerController) GetPendingApprovalByMakerId(c *gin.Context) {
 }
 
 func (t MakercheckerController) GetPendingApprovalByCheckerId(c *gin.Context) {
-    checkerId := c.Param("userId")
+    checkerId := GetUserDetails(c).Id
     if checkerId == "" {
         c.JSON(http.StatusBadRequest, models.HttpError{
             Code: http.StatusBadRequest,
-            Message: "User Id cannot be empty.",
+            Message: "Checker Id cannot be found in the header provided",
         })
-        return
     }
 
     ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
