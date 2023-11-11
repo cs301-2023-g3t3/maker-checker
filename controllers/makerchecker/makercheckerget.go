@@ -32,7 +32,13 @@ func (t MakercheckerController) GetAllMakercheckers(c *gin.Context) {
 
     cursor, err := collection.Find(ctx, bson.M{})
     if err != nil {
-        panic(err)
+        c.JSON(
+            http.StatusInternalServerError, models.HttpError{
+                Code: http.StatusInternalServerError, 
+                Message: "Failed to retrieve makerchecker requests",
+                Data: map[string]interface{}{"data": err.Error()},
+        })
+        return
     }
     
     defer cursor.Close(ctx)
