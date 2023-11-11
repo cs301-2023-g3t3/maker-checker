@@ -59,6 +59,24 @@ func LoggingMiddleware() gin.HandlerFunc {
 				"data":         makerchecker.Data,
 			}
 
+			data, ok := ctx.Get("userDetails")
+			if !ok {
+				ctx.JSON(http.StatusInternalServerError, models.HttpError{
+					Code: http.StatusInternalServerError,
+					Message: "Error",
+				})
+				ctx.Abort()
+
+			}
+			userDetailsObj, ok := data.(map[string]interface{})
+			if !ok {
+				ctx.JSON(http.StatusInternalServerError, models.HttpError{
+					Code: http.StatusInternalServerError,
+					Message: "Error",
+				}) 
+				ctx.Abort()
+			}
+
 			if reqMethod == http.MethodPost {
 				log.WithFields(log.Fields{
 					"METHOD":               reqMethod,
@@ -67,6 +85,7 @@ func LoggingMiddleware() gin.HandlerFunc {
 					"LATENCY":              latencyTime,
 					"MAKERCHECKER_DETAILS": makecheckerFields,
 					"ACTION":              	"create",
+					"ACTOR":      userDetailsObj["user_id"],
 					"USER_AGENT":           userAgent,
 					"SOURCE_IP":            sourceIP,
 				}).Info("CREATE MAKERCHECKER REQUEST")
@@ -80,6 +99,7 @@ func LoggingMiddleware() gin.HandlerFunc {
 					"LATENCY":              latencyTime,
 					"MAKERCHECKER_DETAILS": makecheckerFields,
 					"ACTION":               makecheckerFields["status"],
+					"ACTOR":      userDetailsObj["user_id"],
 					"USER_AGENT":           userAgent,
 					"SOURCE_IP":            sourceIP,
 				}).Info("UPDATE MAKERCHECKER REQUEST")

@@ -31,10 +31,10 @@ resource "aws_lambda_function" "this" {
       MONGO_PASSWORD = data.aws_ssm_parameter.mongo_password.value
       MONGO_HOST     = data.aws_ssm_parameter.mongo_host.value
       QUEUE_NAME     = data.aws_ssm_parameter.queue_name.value
-      REDIS_NODE_1   = data.aws_ssm_parameter.redis_node_1.value
-      REDIS_NODE_2   = data.aws_ssm_parameter.redis_node_2.value
       JWT_SECRET     = data.aws_ssm_parameter.jwt_secret.value
       ENV            = "lambda"
+      # REDIS_NODE_1   = data.aws_ssm_parameter.redis_node_1.value
+      # REDIS_NODE_2   = data.aws_ssm_parameter.redis_node_2.value
     }
   }
 }
