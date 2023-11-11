@@ -8,7 +8,7 @@ import (
 )
 
 func init() {
-	configs.ConnectToRedis()
+	// configs.ConnectToRedis()
 	configs.EnvMongoUri()
 	log.SetFormatter(&log.JSONFormatter{})
 }
