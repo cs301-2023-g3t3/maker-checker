@@ -1,0 +1,91 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "contact": {}
+    },
+    "paths": {
+        "/makerchecker": {
+            "get": {
+                "description": "Retrieves a list of Makerchecker records",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "makerchecker"
+                ],
+                "summary": "Get all Makerchecker Record",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Makerchecker"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.HttpError"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "models.HttpError": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 400
+                },
+                "data": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "message": {
+                    "type": "string",
+                    "example": "status bad request"
+                }
+            }
+        },
+        "models.Makerchecker": {
+            "type": "object",
+            "required": [
+                "checkerId",
+                "data",
+                "endpoint"
+            ],
+            "properties": {
+                "_id": {
+                    "type": "string"
+                },
+                "checkerEmail": {
+                    "type": "string"
+                },
+                "checkerId": {
+                    "type": "string"
+                },
+                "data": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "endpoint": {
+                    "type": "string"
+                },
+                "makerEmail": {
+                    "type": "string"
+                },
+                "makerId": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

@@ -52,7 +52,9 @@ func (t MakercheckerController) CheckMakerchecker (c *gin.Context) {
         return
     }
 
-    statusCode, responseBody := middleware.GetListofUsersWithRolesWithMicroservice(permission.Checker) 
+    idToken := GetIdToken(c)
+
+    statusCode, responseBody := middleware.GetListofUsersWithRolesWithMicroservice(permission.Checker, idToken) 
 
     if statusCode != 200 {
         msg := fmt.Sprint(responseBody)

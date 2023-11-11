@@ -64,7 +64,7 @@ func GetFromMicroserviceById(lambdaFn string, apiRoute string, id string) (int, 
     return response.StatusCode, jsonObject
 }
 
-func GetListofUsersWithRolesWithMicroservice(checkerRoles []float64) (int, any) {
+func GetListofUsersWithRolesWithMicroservice(checkerRoles []float64, idToken string) (int, any) {
     cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(region))
     if err != nil {
         return http.StatusInternalServerError, err.Error()
@@ -81,6 +81,10 @@ func GetListofUsersWithRolesWithMicroservice(checkerRoles []float64) (int, any) 
     event := map[string]interface{}{
         "httpMethod": "POST",
         "path": "/users/accounts/with-roles",
+        "headers": map[string]string{
+            "Content-Type": "application/json",
+            "X-IDTOKEN": idToken,
+        },
         "body": string(body),
     }
 
@@ -120,7 +124,7 @@ func GetListofUsersWithRolesWithMicroservice(checkerRoles []float64) (int, any) 
     return response.StatusCode, jsonObject
 }
 
-func UpdateWithMicroservice(lambdaFn string, apiRoute string, bodyJSON map[string]interface{}) (int, map[string]interface{}) {
+func UpdateWithMicroservice(lambdaFn string, apiRoute string, bodyJSON map[string]interface{}, idToken string) (int, map[string]interface{}) {
     cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(region))
     if err != nil {
         return http.StatusInternalServerError, map[string]interface{}{"data": err.Error()}
@@ -138,6 +142,10 @@ func UpdateWithMicroservice(lambdaFn string, apiRoute string, bodyJSON map[strin
     event := map[string]interface{}{
         "httpMethod": "PUT",
         "path": fmt.Sprintf("/%v/%v", apiRoute, id),
+        "headers": map[string]string{
+            "Content-Type": "application/json",
+            "X-IDTOKEN": idToken,
+        },
         "body": string(body),
     }
 
@@ -164,8 +172,6 @@ func UpdateWithMicroservice(lambdaFn string, apiRoute string, bodyJSON map[strin
         return http.StatusInternalServerError, map[string]interface{}{"data": err.Error()}
     }
 
-    fmt.Println(string(res.Payload))
-
     if response.Body == "404 page not found"{
         return http.StatusNotFound, map[string]interface{}{"data": "Page not found"}
     }
@@ -179,7 +185,7 @@ func UpdateWithMicroservice(lambdaFn string, apiRoute string, bodyJSON map[strin
     return response.StatusCode, jsonObject
 }
 
-func CreateWithMicroservice(lambdaFn string, apiRoute string, bodyJSON map[string]interface{}) (int, map[string]interface{}) {
+func CreateWithMicroservice(lambdaFn string, apiRoute string, bodyJSON map[string]interface{}, idToken string) (int, map[string]interface{}) {
     cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(region))
     if err != nil {
         return http.StatusInternalServerError, map[string]interface{}{"data": err.Error()}
@@ -199,6 +205,10 @@ func CreateWithMicroservice(lambdaFn string, apiRoute string, bodyJSON map[strin
     event := map[string]interface{}{
         "httpMethod": "POST",
         "path": fmt.Sprintf("/%v", apiRoute),
+        "headers": map[string]string{
+            "Content-Type": "application/json",
+            "X-IDTOKEN": idToken,
+        },
         "body": string(body),
     }
 
@@ -238,7 +248,7 @@ func CreateWithMicroservice(lambdaFn string, apiRoute string, bodyJSON map[strin
     return response.StatusCode, jsonObject
 }
 
-func DeleteFromMicroserviceById(lambdaFn string, apiRoute string, id string) (int, map[string]interface{}) {
+func DeleteFromMicroserviceById(lambdaFn string, apiRoute string, id string, idToken string) (int, map[string]interface{}) {
     cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(region))
     if err != nil {
         return http.StatusInternalServerError, map[string]interface{}{"data": err.Error()}
@@ -248,6 +258,10 @@ func DeleteFromMicroserviceById(lambdaFn string, apiRoute string, id string) (in
 
     event := map[string]interface{}{
         "httpMethod": "DELETE",
+        "headers": map[string]string{
+            "Content-Type": "application/json",
+            "X-IDTOKEN": idToken,
+        },
         "path": fmt.Sprintf("/%v/%v", apiRoute, id),
     }
 

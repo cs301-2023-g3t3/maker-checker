@@ -162,13 +162,9 @@ func DecodeJWT() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		//
-		// tokenString := strings.TrimPrefix(auth, "Bearer ")
-		// if tokenString == auth {
-		// 	c.String(http.StatusForbidden, "Could not find bearer token in Authorization header")
-		// 	c.Abort()
-		// 	return
-		// }
+
+        c.Set("idToken", auth)
+
 		var keysJWK = os.Getenv("JWT_SECRET")
 		setOfKeys, err := jwk.ParseString(keysJWK)
 		if err != nil {

@@ -1,0 +1,60 @@
+definitions:
+  models.HttpError:
+    properties:
+      code:
+        example: 400
+        type: integer
+      data:
+        additionalProperties: true
+        type: object
+      message:
+        example: status bad request
+        type: string
+    type: object
+  models.Makerchecker:
+    properties:
+      _id:
+        type: string
+      checkerEmail:
+        type: string
+      checkerId:
+        type: string
+      data:
+        additionalProperties: true
+        type: object
+      endpoint:
+        type: string
+      makerEmail:
+        type: string
+      makerId:
+        type: string
+      status:
+        type: string
+    required:
+    - checkerId
+    - data
+    - endpoint
+    type: object
+info:
+  contact: {}
+paths:
+  /makerchecker:
+    get:
+      description: Retrieves a list of Makerchecker records
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Makerchecker'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.HttpError'
+      summary: Get all Makerchecker Record
+      tags:
+      - makerchecker
+swagger: "2.0"

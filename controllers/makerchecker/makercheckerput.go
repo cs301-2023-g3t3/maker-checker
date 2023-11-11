@@ -16,19 +16,21 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func RequestApproved(lambdaFn string, apiRoute string, data map[string]interface{}, action string) (int, map[string]interface{}) {
+func RequestApproved(lambdaFn string, apiRoute string, data map[string]interface{}, action string, c *gin.Context) (int, map[string]interface{}) {
     var statusCode int
     var responseBody map[string]interface{}
 
+    idToken := GetIdToken(c)
+
     switch action {
     case "PUT":
-        statusCode, responseBody = middleware.UpdateWithMicroservice(lambdaFn, apiRoute, data)
+        statusCode, responseBody = middleware.UpdateWithMicroservice(lambdaFn, apiRoute, data, idToken)
         break
     case "POST":
-        statusCode, responseBody = middleware.CreateWithMicroservice(lambdaFn, apiRoute, data)
+        statusCode, responseBody = middleware.CreateWithMicroservice(lambdaFn, apiRoute, data, idToken)
         break
     case "DELETE":
-        statusCode, responseBody = middleware.DeleteFromMicroserviceById(lambdaFn, apiRoute, fmt.Sprint(data["id"]))
+        statusCode, responseBody = middleware.DeleteFromMicroserviceById(lambdaFn, apiRoute, fmt.Sprint(data["id"]), idToken)
         break
     default:
         return http.StatusBadRequest, map[string]interface{}{"data": "Action must be either 'POST', 'PUT', or 'DELETE' only"}
@@ -108,7 +110,7 @@ func (t MakercheckerController) UpdateMakerchecker (c *gin.Context) {
     if requestBody.Status == "cancelled"{
         makerchecker.Status = "cancelled"
     } else if requestBody.Status == "approved" {
-        statusCode, responseBody = RequestApproved(lambdaFn, apiRoute, makerchecker.Data, endpointParts[2])
+        statusCode, responseBody = RequestApproved(lambdaFn, apiRoute, makerchecker.Data, endpointParts[2], c)
         if statusCode != 200 && statusCode != 201 {
             msg := fmt.Sprint(responseBody)
             if statusCode == 0 {

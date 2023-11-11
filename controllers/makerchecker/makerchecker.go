@@ -109,3 +109,17 @@ func GetUserDetails(c *gin.Context) *FormattedUserDetails {
 
     return formatUserObj
 }
+
+func GetIdToken(c *gin.Context) string {
+    idToken, ok := c.Get("idToken")
+    if !ok {
+        c.JSON(http.StatusInternalServerError, models.HttpError{
+            Code: http.StatusInternalServerError,
+            Message: "Unable to get token",
+        })
+        c.Abort()
+        return ""
+    }
+
+    return idToken.(string)
+}
