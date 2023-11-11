@@ -164,6 +164,8 @@ func UpdateWithMicroservice(lambdaFn string, apiRoute string, bodyJSON map[strin
         return http.StatusInternalServerError, map[string]interface{}{"data": err.Error()}
     }
 
+    fmt.Println(string(res.Payload))
+
     if response.Body == "404 page not found"{
         return http.StatusNotFound, map[string]interface{}{"data": "Page not found"}
     }
