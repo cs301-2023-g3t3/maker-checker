@@ -19,6 +19,13 @@ func generateUniqueKey (data bson.M) string {
     }
 }
 
+//  @Summary        Get all Makerchecker Record
+//  @Description    Retrieves a list of Makerchecker records
+//  @Tags           makerchecker
+//  @Produce        json
+//  @Success        200     {array}     models.Makerchecker
+//  @Failure        500     {object}    models.HttpError
+//  @Router         /record   [get]
 func (t MakercheckerController) GetAllMakercheckers(c *gin.Context) {
     ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
     defer cancel()
@@ -45,7 +52,16 @@ func (t MakercheckerController) GetAllMakercheckers(c *gin.Context) {
     c.JSON(http.StatusOK, makercheckers)
 }
 
-
+//  @Summary        Get Makerchecker recordby Id
+//  @Description    Retrieve a Makerchecker By ID
+//  @Tags           makerchecker
+//  @Produce        json
+//  @Param          id      path    string  true    "id"
+//  @Success        200     {object}    models.Makerchecker
+//  @Failure        400     {object}    models.HttpError    "Id cannot be empty"
+//  @Failure        404     {object}    models.HttpError    "Record not found with Id"
+//  @Failure        500     {object}    models.HttpError
+//  @Router         /record/{id}   [get]
 func (t MakercheckerController) GetMakercheckerById(c *gin.Context) {
     id := c.Param("id")
     if id == "" {
@@ -78,6 +94,15 @@ func (t MakercheckerController) GetMakercheckerById(c *gin.Context) {
     c.JSON(http.StatusOK, makerchecker)
 }
 
+//  @Summary        Get all Pending Approval as a Maker using MakerID
+//  @Description    Retrieves a list of pending approval records
+//  @Tags           makerchecker
+//  @Produce        json
+//  @Success        200     {array}     models.Makerchecker
+//  @Failure        400     {object}    models.HttpError    "Maker Id cannot be found in the header provided"
+//  @Failure        404     {object}    models.HttpError    "No pending requests found"
+//  @Failure        500     {object}    models.HttpError
+//  @Router         /record/pending-approve   [get]
 func (t MakercheckerController) GetPendingApprovalByMakerId(c *gin.Context) {
     makerId := GetUserDetails(c).Id
     if makerId == "" {
@@ -126,6 +151,15 @@ func (t MakercheckerController) GetPendingApprovalByMakerId(c *gin.Context) {
     c.JSON(http.StatusOK, makerchecker)
 }
 
+//  @Summary        Get all Pending Approval as a Checker using CheckerID
+//  @Description    Retrieves a list of pending approval records
+//  @Tags           makerchecker
+//  @Produce        json
+//  @Success        200     {array}     models.Makerchecker
+//  @Failure        400     {object}    models.HttpError    "Checker Id cannot be found in the header provided"
+//  @Failure        404     {object}    models.HttpError    "No pending requests found"
+//  @Failure        500     {object}    models.HttpError
+//  @Router         /record/to-approve   [get]
 func (t MakercheckerController) GetPendingApprovalByCheckerId(c *gin.Context) {
     checkerId := GetUserDetails(c).Id
     if checkerId == "" {

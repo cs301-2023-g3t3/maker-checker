@@ -12,6 +12,16 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+//  @Summary        Delete a Makerchecker Permission by ID
+//  @Description    Delete a Makerchecker Permission By ID
+//  @Tags           permission
+//  @Produce        json
+//  @Param          id      path    string  true    "id"
+//  @Success        200     {object}    models.Permission
+//  @Failure        400     {object}    models.HttpError    "Id cannot be empty"
+//  @Failure        404     {object}    models.HttpError    "No permission found with Id"
+//  @Failure        500     {object}    models.HttpError
+//  @Router         /permission/{id}   [delete]
 func (t PermissionController) DeletePermissionById (c *gin.Context) {
     id := c.Param("id")
     if id == "" {

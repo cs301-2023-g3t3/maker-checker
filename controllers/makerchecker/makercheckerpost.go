@@ -14,14 +14,25 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+type VerifyMaker struct {
+    Endpoint    string      `json:"endpoint" validate:"required"`
+}
+
+//  @Summary        Verify if a User can do Makerchecker
+//  @Description    Verify if a User can do Makerchecker
+//  @Tags           makerchecker
+//  @Produce        json
+//  @Param          requestBody     body    VerifyMaker    true    "Request Body"
+//  @Success        200     {object}    map[string]interface{}
+//  @Failure        400     {object}    models.HttpError    "Bad request due to invalid JSON body"
+//  @Failure        403     {object}    models.HttpError    "Not enough permission to do makerchecker"
+//  @Failure        404     {object}    models.HttpError    "Unable to find makerchecker permission"
+//  @Failure        500     {object}    models.HttpError
+//  @Router         /verify     [post]
 func (t MakercheckerController) CheckMakerchecker (c *gin.Context) {
     userDetails := GetUserDetails(c)
 
-    type RequestBody struct {
-        Endpoint    string      `json:"endpoint" validate:"required"`
-    }
-
-    var requestBody RequestBody
+    var requestBody VerifyMaker
     if err := c.BindJSON(&requestBody); err != nil {
         c.JSON(http.StatusBadRequest, models.HttpError{
             Code: http.StatusBadRequest,
@@ -74,6 +85,17 @@ func (t MakercheckerController) CheckMakerchecker (c *gin.Context) {
     c.JSON(http.StatusOK, responseBody)
 }
 
+//  @Summary        Create a Makerchecker
+//  @Description    Create a Makerchecker
+//  @Tags           makerchecker
+//  @Produce        json
+//  @Param          body     body   models.Makerchecker      true    "makerchecker"
+//  @Success        200     {object}    models.Makerchecker
+//  @Failure        400     {object}    models.HttpError    "Bad request due to invalid JSON body"
+//  @Failure        403     {object}    models.HttpError    "Not enough permission to do makerchecker"
+//  @Failure        404     {object}    models.HttpError    "Unable to find resources"
+//  @Failure        500     {object}    models.HttpError
+//  @Router         /record     [post]
 func (t MakercheckerController) CreateMakerchecker (c *gin.Context) {
     var reqBody models.Makerchecker
     if err := c.BindJSON(&reqBody); err != nil {

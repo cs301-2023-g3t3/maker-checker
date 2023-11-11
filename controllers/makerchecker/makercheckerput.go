@@ -39,13 +39,24 @@ func RequestApproved(lambdaFn string, apiRoute string, data map[string]interface
     return statusCode, responseBody
 }
 
-func (t MakercheckerController) UpdateMakerchecker (c *gin.Context) {
-    type RequestBody struct {
-        Id      string      `json:"id" validate:"required"`
-        Status  string      `json:"status" validate:"required"`
-    }
+type UpdateMakerchecker struct {
+    Id      string      `json:"id" validate:"required"`
+    Status  string      `json:"status" validate:"required"`
+}
 
-    var requestBody RequestBody
+//  @Summary        Update Makerchecker by approving or rejecting request
+//  @Description    Update Makerchecker by approving or rejecting request
+//  @Tags           makerchecker
+//  @Produce        json
+//  @Param          requestBody      body    UpdateMakerchecker  true    "Request Body"
+//  @Success        200     {object}    models.Makerchecker
+//  @Failure        400     {object}    models.HttpError    "Bad request due to invalid JSON body"
+//  @Failure        403     {object}    models.HttpError    "User is not authorize to approve the request"
+//  @Failure        404     {object}    models.HttpError    "No makerchecker record found with makercheckerId"
+//  @Failure        500     {object}    models.HttpError
+//  @Router         /record   [put]
+func (t MakercheckerController) UpdateMakerchecker (c *gin.Context) {
+    var requestBody UpdateMakerchecker
     if err := c.BindJSON(&requestBody); err != nil {
         c.JSON(http.StatusBadRequest, models.HttpError{
             Code: http.StatusBadRequest,

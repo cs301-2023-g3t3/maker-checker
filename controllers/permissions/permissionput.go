@@ -12,6 +12,23 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+type UpdatePermission struct {
+    Endpoint       string                     `json:"endpoint" bson:"endpoint" validation:"required"`
+    Maker          []float64                  `json:"maker" bson:"maker" validation:"required"`
+    Checker        []float64                  `json:"checker" bson:"checker" validation:"required"`
+}
+
+//  @Summary        Update Makerchecker Permission by Id
+//  @Description    Update Makerchecker Permission by Id
+//  @Tags           permission
+//  @Produce        json
+//  @Param          id      path    string  true    "id"
+//  @Param          requestBody      body    UpdatePermission  true    "Request Body"
+//  @Success        200     {object}    models.Permission
+//  @Failure        400     {object}    models.HttpError    "Id cannot be empty and permission object is invalid"
+//  @Failure        404     {object}    models.HttpError    "No permission found"
+//  @Failure        500     {object}    models.HttpError
+//  @Router         /permission/{id}   [put]
 func (t PermissionController) UpdatePermissionById(c *gin.Context) {
     id := c.Param("id")
     if id == "" {
@@ -20,12 +37,6 @@ func (t PermissionController) UpdatePermissionById(c *gin.Context) {
             Message: "id cannot be empty",
             Data: nil,
         })
-    }
-
-    type UpdatePermission struct {
-        Endpoint       string                     `json:"endpoint" bson:"endpoint" validation:"required"`
-        Maker          []float64                  `json:"maker" bson:"maker" validation:"required"`
-        Checker        []float64                  `json:"checker" bson:"checker" validation:"required"`
     }
 
     var permission UpdatePermission

@@ -2,6 +2,9 @@ package routes
 
 import (
 	"context"
+    docs "makerchecker-api/docs"
+    swaggerFiles "github.com/swaggo/files"
+    ginSwagger "github.com/swaggo/gin-swagger"
 	"makerchecker-api/controllers"
 	"makerchecker-api/controllers/makerchecker"
 	permission "makerchecker-api/controllers/permissions"
@@ -21,6 +24,25 @@ func Handler(ctx context.Context, req events.APIGatewayProxyRequest) (events.API
 	return ginLambda.ProxyWithContext(ctx, req)
 }
 
+//	@title			Swagger Example API
+//	@version		1.0
+//	@description	This is a sample server celler server.
+//	@termsOfService	http://swagger.io/terms/
+
+//	@contact.name	API Support
+//	@contact.url	http://www.swagger.io/support
+//	@contact.email	support@swagger.io
+
+//	@license.name	Apache 2.0
+//	@license.url	http://www.apache.org/licenses/LICENSE-2.0.html
+
+//	@host		localhost:8080
+//	@BasePath	/api/v1
+
+//	@securityDefinitions.basic	BasicAuth
+
+// @externalDocs.description	OpenAPI
+// @externalDocs.url			https://swagger.io/resources/open-api/
 func InitRoutes() {
     PORT := os.Getenv("PORT")
 
@@ -38,6 +60,8 @@ func InitRoutes() {
 	router.Use(cors.New(config))
     router.Use(middleware.LoggingMiddleware())
 
+
+    docs.SwaggerInfo.BasePath = "docs"
 
     v1 := router.Group("/makerchecker")
 
@@ -64,6 +88,9 @@ func InitRoutes() {
     permissionGroup.POST("", permission.CreateMakercheckerPermission)
     permissionGroup.PUT("/:id", permission.UpdatePermissionById)
     permissionGroup.DELETE("/:id", permission.DeletePermissionById)
+
+    // Swagger
+    router.GET("swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
     env := os.Getenv("ENV")
     if env == "lambda" {

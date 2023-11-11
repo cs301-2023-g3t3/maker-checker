@@ -11,6 +11,15 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+//  @Summary        Add a Makerchecker Permission
+//  @Description    Add a Makerchecker Permission 
+//  @Tags           permission
+//  @Produce        json
+//  @Param          requestBody    body        models.Permission    true    "Permission Body"
+//  @Success        200     {object}    models.Permission
+//  @Failure        400     {object}    models.HttpError    "Invalid permission object or endpoint already exists"
+//  @Failure        500     {object}    models.HttpError
+//  @Router         /permission   [post]
 func (t PermissionController) CreateMakercheckerPermission(c *gin.Context) {
     var permission models.Permission
     

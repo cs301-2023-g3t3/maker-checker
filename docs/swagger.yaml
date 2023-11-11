@@ -1,4 +1,21 @@
 definitions:
+  makerchecker.UpdateMakerchecker:
+    properties:
+      id:
+        type: string
+      status:
+        type: string
+    required:
+    - id
+    - status
+    type: object
+  makerchecker.VerifyMaker:
+    properties:
+      endpoint:
+        type: string
+    required:
+    - endpoint
+    type: object
   models.HttpError:
     properties:
       code:
@@ -35,10 +52,215 @@ definitions:
     - data
     - endpoint
     type: object
+  models.Permission:
+    properties:
+      _id:
+        type: string
+      checker:
+        items:
+          type: number
+        type: array
+      endpoint:
+        type: string
+      maker:
+        items:
+          type: number
+        type: array
+    type: object
+  permission.UpdatePermission:
+    properties:
+      checker:
+        items:
+          type: number
+        type: array
+      endpoint:
+        type: string
+      maker:
+        items:
+          type: number
+        type: array
+    type: object
 info:
   contact: {}
 paths:
-  /makerchecker:
+  /permission:
+    get:
+      description: Retrieves a list of makerchecker permission
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Permission'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.HttpError'
+      summary: Get all Makerchecker Permission
+      tags:
+      - permission
+    post:
+      description: Add a Makerchecker Permission
+      parameters:
+      - description: Permission Body
+        in: body
+        name: requestBody
+        required: true
+        schema:
+          $ref: '#/definitions/models.Permission'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Permission'
+        "400":
+          description: Invalid permission object or endpoint already exists
+          schema:
+            $ref: '#/definitions/models.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.HttpError'
+      summary: Add a Makerchecker Permission
+      tags:
+      - permission
+  /permission/{id}:
+    delete:
+      description: Delete a Makerchecker Permission By ID
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Permission'
+        "400":
+          description: Id cannot be empty
+          schema:
+            $ref: '#/definitions/models.HttpError'
+        "404":
+          description: No permission found with Id
+          schema:
+            $ref: '#/definitions/models.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.HttpError'
+      summary: Delete a Makerchecker Permission by ID
+      tags:
+      - permission
+    get:
+      description: Retrieve a Makerchecker permission by Id
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Permission'
+        "400":
+          description: Id cannot be empty
+          schema:
+            $ref: '#/definitions/models.HttpError'
+        "404":
+          description: No permission can be found with Id
+          schema:
+            $ref: '#/definitions/models.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.HttpError'
+      summary: Get Makerchecker permission by Id
+      tags:
+      - permission
+    put:
+      description: Update Makerchecker Permission by Id
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Request Body
+        in: body
+        name: requestBody
+        required: true
+        schema:
+          $ref: '#/definitions/permission.UpdatePermission'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Permission'
+        "400":
+          description: Id cannot be empty and permission object is invalid
+          schema:
+            $ref: '#/definitions/models.HttpError'
+        "404":
+          description: No permission found
+          schema:
+            $ref: '#/definitions/models.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.HttpError'
+      summary: Update Makerchecker Permission by Id
+      tags:
+      - permission
+  /permission/by-endpoint:
+    get:
+      description: Retrieve a Makerchecker Permission by Endpoint route
+      parameters:
+      - description: endpoint
+        in: body
+        name: endpoint
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Permission'
+            type: array
+        "400":
+          description: Endpoint cannot be empty
+          schema:
+            $ref: '#/definitions/models.HttpError'
+        "404":
+          description: Makerchecker permission cannot be found with endpoint route
+          schema:
+            $ref: '#/definitions/models.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.HttpError'
+      summary: Get Makerchecker Permission by Endpoint route
+      tags:
+      - permission
+  /record:
     get:
       description: Retrieves a list of Makerchecker records
       produces:
@@ -55,6 +277,198 @@ paths:
           schema:
             $ref: '#/definitions/models.HttpError'
       summary: Get all Makerchecker Record
+      tags:
+      - makerchecker
+    post:
+      description: Create a Makerchecker
+      parameters:
+      - description: makerchecker
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.Makerchecker'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Makerchecker'
+        "400":
+          description: Bad request due to invalid JSON body
+          schema:
+            $ref: '#/definitions/models.HttpError'
+        "403":
+          description: Not enough permission to do makerchecker
+          schema:
+            $ref: '#/definitions/models.HttpError'
+        "404":
+          description: Unable to find resources
+          schema:
+            $ref: '#/definitions/models.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.HttpError'
+      summary: Create a Makerchecker
+      tags:
+      - makerchecker
+    put:
+      description: Update Makerchecker by approving or rejecting request
+      parameters:
+      - description: Request Body
+        in: body
+        name: requestBody
+        required: true
+        schema:
+          $ref: '#/definitions/makerchecker.UpdateMakerchecker'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Makerchecker'
+        "400":
+          description: Bad request due to invalid JSON body
+          schema:
+            $ref: '#/definitions/models.HttpError'
+        "403":
+          description: User is not authorize to approve the request
+          schema:
+            $ref: '#/definitions/models.HttpError'
+        "404":
+          description: No makerchecker record found with makercheckerId
+          schema:
+            $ref: '#/definitions/models.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.HttpError'
+      summary: Update Makerchecker by approving or rejecting request
+      tags:
+      - makerchecker
+  /record/{id}:
+    get:
+      description: Retrieve a Makerchecker By ID
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Makerchecker'
+        "400":
+          description: Id cannot be empty
+          schema:
+            $ref: '#/definitions/models.HttpError'
+        "404":
+          description: Record not found with Id
+          schema:
+            $ref: '#/definitions/models.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.HttpError'
+      summary: Get Makerchecker recordby Id
+      tags:
+      - makerchecker
+  /record/pending-approve:
+    get:
+      description: Retrieves a list of pending approval records
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Makerchecker'
+            type: array
+        "400":
+          description: Maker Id cannot be found in the header provided
+          schema:
+            $ref: '#/definitions/models.HttpError'
+        "404":
+          description: No pending requests found
+          schema:
+            $ref: '#/definitions/models.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.HttpError'
+      summary: Get all Pending Approval as a Maker using MakerID
+      tags:
+      - makerchecker
+  /record/to-approve:
+    get:
+      description: Retrieves a list of pending approval records
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Makerchecker'
+            type: array
+        "400":
+          description: Checker Id cannot be found in the header provided
+          schema:
+            $ref: '#/definitions/models.HttpError'
+        "404":
+          description: No pending requests found
+          schema:
+            $ref: '#/definitions/models.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.HttpError'
+      summary: Get all Pending Approval as a Checker using CheckerID
+      tags:
+      - makerchecker
+  /verify:
+    post:
+      description: Verify if a User can do Makerchecker
+      parameters:
+      - description: Request Body
+        in: body
+        name: requestBody
+        required: true
+        schema:
+          $ref: '#/definitions/makerchecker.VerifyMaker'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request due to invalid JSON body
+          schema:
+            $ref: '#/definitions/models.HttpError'
+        "403":
+          description: Not enough permission to do makerchecker
+          schema:
+            $ref: '#/definitions/models.HttpError'
+        "404":
+          description: Unable to find makerchecker permission
+          schema:
+            $ref: '#/definitions/models.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.HttpError'
+      summary: Verify if a User can do Makerchecker
       tags:
       - makerchecker
 swagger: "2.0"
