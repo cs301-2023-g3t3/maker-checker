@@ -36,6 +36,8 @@ func InitRoutes() {
     config.AddAllowHeaders("Authorization", "X-IDTOKEN")
 	config.AllowAllOrigins = true
 	router.Use(cors.New(config))
+    router.Use(middleware.LoggingMiddleware())
+
 
     v1 := router.Group("/makerchecker")
 
