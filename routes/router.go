@@ -28,9 +28,11 @@ func InitRoutes() {
     makerchecker := new(makerchecker.MakercheckerController)
     permission := new(permission.PermissionController)
     
-    router := gin.Default()
+    // router := gin.Default()
+    router := gin.New()
 	router.Use(gin.Recovery())
     router.Use(cors.Default())
+    router.Use(middleware.LoggingMiddleware())
 
     v1 := router.Group("/makerchecker")
 

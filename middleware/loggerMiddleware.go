@@ -1,8 +1,6 @@
 package middleware
 
 import (
-	// "encoding/json"
-	// "fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -48,7 +46,6 @@ func LoggingMiddleware() gin.HandlerFunc {
 
 		// Logs for makerchecker entries
 		if strings.Contains(reqUri, "/record") {
-			var action string
 			data, _ := ctx.Get("makerchecker")
 			makerchecker, _ := data.(models.Makerchecker)
 			makecheckerFields := log.Fields{
@@ -63,14 +60,13 @@ func LoggingMiddleware() gin.HandlerFunc {
 			}
 
 			if reqMethod == http.MethodPost {
-				action = "create"
 				log.WithFields(log.Fields{
 					"METHOD":               reqMethod,
 					"URI":                  reqUri,
 					"STATUS":               statusCode,
 					"LATENCY":              latencyTime,
 					"MAKERCHECKER_DETAILS": makecheckerFields,
-					"ACTION":               action,
+					"ACTION":              	"create",
 					"USER_AGENT":           userAgent,
 					"SOURCE_IP":            sourceIP,
 				}).Info("CREATE MAKERCHECKER REQUEST")
