@@ -73,7 +73,7 @@ func (t MakercheckerController) UpdateMakerchecker (c *gin.Context) {
         return
     }
 
-    checkerDetails := GetUserDetails(c)
+    userDetails := GetUserDetails(c)
 
     ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
     defer cancel()
@@ -95,12 +95,21 @@ func (t MakercheckerController) UpdateMakerchecker (c *gin.Context) {
         return
     }
 
-    if makerchecker.CheckerId != checkerDetails.Id {
-        c.JSON(http.StatusForbidden, models.HttpError{
-            Code: http.StatusForbidden,
-            Message: "User is not authorize to approve the request.",
-        })
-        return
+    var typeOfUser string
+
+    switch userDetails.Id {
+        case makerchecker.MakerId:
+            typeOfUser = "maker"
+            break
+        case makerchecker.CheckerId:
+            typeOfUser = "checker"
+            break
+        default:
+            c.JSON(http.StatusForbidden, models.HttpError{
+                Code: http.StatusForbidden,
+                Message: "User is not authorize to approve the request.",
+            })
+            return
     }
 
     if makerchecker.Status == "cancelled" || makerchecker.Status == "approved"{
@@ -121,6 +130,14 @@ func (t MakercheckerController) UpdateMakerchecker (c *gin.Context) {
     if requestBody.Status == "cancelled"{
         makerchecker.Status = "cancelled"
     } else if requestBody.Status == "approved" {
+        if typeOfUser != "checker" {
+            c.JSON(http.StatusForbidden, models.HttpError{
+                Code: http.StatusForbidden,
+                Message: "User is not authorize to approve the request",
+            })
+            return
+        }
+
         statusCode, responseBody = RequestApproved(lambdaFn, apiRoute, makerchecker.Data, endpointParts[2], c)
         if statusCode != 200 && statusCode != 201 {
             msg := fmt.Sprint(responseBody)
