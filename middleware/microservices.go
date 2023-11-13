@@ -15,7 +15,7 @@ import (
 
 var region = "ap-southeast-1"
 
-func GetFromMicroserviceById(lambdaFn string, apiRoute string, id string) (int, map[string]interface{}) {
+func GetFromMicroserviceById(lambdaFn string, apiRoute string, id string, idToken string) (int, map[string]interface{}) {
     cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(region))
     if err != nil {
         return http.StatusInternalServerError, map[string]interface{}{"data": err.Error()}
@@ -25,6 +25,10 @@ func GetFromMicroserviceById(lambdaFn string, apiRoute string, id string) (int, 
 
     event := map[string]interface{}{
         "httpMethod": "GET",
+        "headers": map[string]string{
+            "Content-Type": "application/json",
+            "X-IDTOKEN": idToken,
+        },
         "path": fmt.Sprintf("/%v/%v", apiRoute, id),
     }
 

@@ -117,9 +117,11 @@ func (t MakercheckerController) CreateMakerchecker (c *gin.Context) {
     makerDetails := GetUserDetails(c)
     makerRole := makerDetails.Role
 
+    idToken := GetIdToken(c)
+
     // Get checker details
     lambdaFn, apiRoute := utils.ProcessMicroserviceTypes("users")
-    statusCode, checkerDetails := middleware.GetFromMicroserviceById(lambdaFn, apiRoute, reqBody.CheckerId)
+    statusCode, checkerDetails := middleware.GetFromMicroserviceById(lambdaFn, apiRoute, reqBody.CheckerId, idToken)
     if statusCode != 200 {
         c.JSON(http.StatusBadRequest, models.HttpError{
             Code: http.StatusBadRequest,
@@ -173,7 +175,7 @@ func (t MakercheckerController) CreateMakerchecker (c *gin.Context) {
         dataId := fmt.Sprint(reqBody.Data["id"])
 
         // Check if data exists in relevant database
-        statusCode, responseBody := middleware.GetFromMicroserviceById(lambdaFn, apiRoute, dataId) 
+        statusCode, responseBody := middleware.GetFromMicroserviceById(lambdaFn, apiRoute, dataId, idToken) 
 
         // Error fetching data
         if statusCode != 200 {
