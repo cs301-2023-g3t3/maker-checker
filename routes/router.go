@@ -6,6 +6,7 @@ import (
     swaggerFiles "github.com/swaggo/files"
     ginSwagger "github.com/swaggo/gin-swagger"
 	"makerchecker-api/controllers"
+	"makerchecker-api/models"
 	"makerchecker-api/controllers/makerchecker"
 	permission "makerchecker-api/controllers/permissions"
 	"makerchecker-api/middleware"
@@ -21,7 +22,15 @@ import (
 var ginLambda *ginadapter.GinLambda
 
 func Handler(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+    metadata := models.RequestMetadata{
+		UserAgent: req.RequestContext.Identity.UserAgent,
+		SourceIP:  req.RequestContext.Identity.SourceIP,
+	}
+
+	ctx = context.WithValue(ctx, "RequestMetadata", metadata)
+
 	return ginLambda.ProxyWithContext(ctx, req)
+
 }
 
 //	@title			Swagger Example API
