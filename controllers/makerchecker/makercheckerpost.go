@@ -238,5 +238,6 @@ func (t MakercheckerController) CreateMakerchecker (c *gin.Context) {
         return
     }
 
+    c.Set("makerchcker", reqBody)
     c.JSON(http.StatusCreated, map[string]interface{}{"result": reqBody})
 }

@@ -174,5 +174,6 @@ func (t MakercheckerController) UpdateMakerchecker (c *gin.Context) {
         return
     }
 
+    c.Set("makerchecker", makerchecker)
     c.JSON(200, map[string]interface{}{"Updated Makerchecker": makerchecker, "Updated Data": responseBody})
 } 

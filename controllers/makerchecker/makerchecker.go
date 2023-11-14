@@ -78,10 +78,8 @@ func GetUserDetails(c *gin.Context) *FormattedUserDetails {
         switch k {
         case "email":
             formatUserObj.Email = v.(string)
-            break
         case "user_id":
             formatUserObj.Id = v.(string)
-            break
         case "cognito:groups":
             temp, ok := v.([]interface{})
             if !ok {
